@@ -8,6 +8,7 @@ class EncoderBlock(nn.Module):
     def __init__(self, d_model: int, d_attn: int, n_heads: int, d_ff: int):
         super(EncoderBlock, self).__init__()
         self.d_model = d_model
+        self.layer_norm = nn.LayerNorm(d_model)
 
         self.attention = MultiHeadAttention(d_model, d_attn, n_heads, cross_attention=False)
         self.feedforward = nn.Sequential(
@@ -19,9 +20,9 @@ class EncoderBlock(nn.Module):
     def forward(self, x, mask=None):
         attention = self.attention(x, cross=None, mask=mask)
         x = x + attention
-        x = F.layer_norm(x, x.size()[1:])
+        x = self.layer_norm(x)
         x = x + self.feedforward(attention)
-        x = F.layer_norm(x, x.size()[1:])
+        x = self.layer_norm(x)
         return x
 
 

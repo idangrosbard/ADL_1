@@ -9,5 +9,6 @@ class EncoderLLM(nn.Module):
         self.o = nn.Linear(d_model, corpus_size)
 
     def forward(self, x: Tensor, mask: Tensor = None):
+        # mean = .mean(dim=1)
         return self.o(self.encoder(x, mask))
 

@@ -56,6 +56,7 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     logits = model(b_inp)
 
     labels = batch['labels'][batch['labels'] > -100].to(device)
+    print(labels.shape, logits.shape)
     
     logits = logits[labels > -100]
     

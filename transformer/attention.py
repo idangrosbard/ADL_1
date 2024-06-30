@@ -40,7 +40,9 @@ class Attention(nn.Module):
 
         attn = self.softmax(logits / (self.d_model ** 0.5))
 
-        return attn @ v
+        attn_out = attn @ v
+        # print(o.shape)
+        return self.o(attn_out)
     
 
 class MultiHeadAttention(nn.Module):
