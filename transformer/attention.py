@@ -14,6 +14,7 @@ class Attention(nn.Module):
         self.q = nn.Linear(d_model, d_attn)
         self.k = nn.Linear(d_model, d_attn)
         self.v = nn.Linear(d_model, d_attn)
+        self.softmax = nn.Softmax(dim=-1)
 
         self.o = nn.Linear(d_attn, d_model)
 
@@ -41,7 +42,7 @@ class Attention(nn.Module):
         if mask is not None:
             logits = logits[mask, mask] = float('-inf')
 
-        attn = F.softmax(logits / (self.d_model ** 0.5), dim=-1)
+        attn = self.softmax(logits / (self.d_model ** 0.5))
 
         return attn @ v
     
