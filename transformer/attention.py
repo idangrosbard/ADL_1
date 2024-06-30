@@ -27,11 +27,7 @@ class Attention(nn.Module):
             q = self.q(x)
             k = self.k(x)
         
-        print(x.shape)
-        print(q.shape, k.shape)
         v = self.v(x)
-        print(v.shape)
-        print(q.shape, k.transpose(-2, -1).shape, v.shape)
 
         logits = q @ k.transpose(-2, -1)
         
