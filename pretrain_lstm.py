@@ -1,3 +1,4 @@
+from lstm.lstm_lm import LSTM_LM
 import torch
 from datasets import load_dataset
 import torch.utils
@@ -7,7 +8,6 @@ from transformers import GPT2TokenizerFast
 from tokenizers.processors import TemplateProcessing
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
-from transformer import EncoderLLM
 
 
 def setup_tokenizer():
@@ -50,14 +50,13 @@ def setup_dataloaders(batch_size: int = 2):
 
 def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, train: bool = True):
     optimizer.zero_grad()
-    b_inp = batch['input_ids'].to(device).long()
-    filtered_labels = batch['labels'][batch['labels'] > -100].long()
-    filtered_labels = filtered_labels.to(device, non_blocking=True)
+    b_inp = batch['input_ids'].to(device, non_blocking=True).long()
+    labels = batch['labels'].long().to(device, non_blocking=True)
 
-    logits = model(b_inp, batch['attention_mask'])
-    logits = logits[batch['labels'] > -100]
-
-    loss = loss_fn(logits, filtered_labels)
+    h, c = None, None
+    for t in range(1, labels.shape[1]):
+        logits, h, c = model(b_inp, h, c)
+        loss = loss_fn(logits, labels[:, t])
     
     if train:
         loss.backward()
@@ -100,20 +99,18 @@ if __name__ == '__main__':
     lr = 1e-5
     max_lr = 1e-4
     model_d = 16
-    attn_d = 64
-    n_heads = 8
-    ff_d = 256
+    hidden_d = 64
     n_layers = 3
     
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     train_dl, eval_dl, test_dl = setup_dataloaders(bsize)
-    model = EncoderLLM(train_dl.dataset.tokenizer.vocab_size + 2, model_d, attn_d, ff_d, n_heads, n_layers)
+    model = LSTM_LM(train_dl.dataset.tokenizer.vocab_size + 2, model_d, hidden_d, n_layers)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_dl), epochs=N_epochs)
     loss_fn = torch.nn.CrossEntropyLoss()
     writer = SummaryWriter()
-    writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr, 'model_d': model_d, 'attn_d': attn_d, 'n_heads': n_heads, 'ff_d': ff_d, 'n_layers': n_layers}, {})
+    writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr, 'model_d': model_d, 'hidden_d': hidden_d, 'n_layers': n_layers}, {})
     
     model = train(model, train_dl, eval_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs)
     model.to(dev)

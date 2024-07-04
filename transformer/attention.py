@@ -36,7 +36,7 @@ class Attention(nn.Module):
             logits[mask] = float('-inf')
 
         if mask is not None:
-            logits = logits[mask, mask] = float('-inf')
+            logits[mask == 0] = float('-inf')
 
         attn = self.softmax(logits / (self.d_model ** 0.5))
 

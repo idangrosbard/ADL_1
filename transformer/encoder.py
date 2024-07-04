@@ -29,11 +29,12 @@ class EncoderBlock(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, corpus_size: int, d_model: int, d_attn: int, d_ff: int, n_heads: int, n_layers: int) -> None:
         super().__init__()
-        self.embed = nn.Embedding(corpus_size, d_model)
+        self.embed = nn.Embedding(corpus_size, d_model, corpus_size - 1)
         self.layers = nn.ModuleList([EncoderBlock(d_model, d_attn, n_heads, d_ff) for _ in range(n_layers)])
 
     def forward(self, x, mask=None):
         x = self.embed(x)
+
         for layer in self.layers:
             x = layer(x, mask)
         return x
