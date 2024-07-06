@@ -47,11 +47,12 @@ class S4Layer(nn.Module):
         # Following the algorithm from the paper:
         A = self._lambda - self.P @ self.Q.conj().t()
         # TODO: calc A_bar, C_bar
-        # A_bar = np.eye(A.shape[0]) - self.delta A**L
-        # C_bar 
+        A_bar = (np.eye(A.shape[0]) - self.delta/2 * A).inverse() @ (np.eye(A.shape[0]) + self.delta/2 * A)
+        # B_bar = (np.eye(A.shape[0]) - self.delta/2 * A).inverse() @ (self.delta*self.B)
+        C_bar = self.C
         C_tilda = (np.eye(A.shape[0]) - A_bar**L).conj().t() @ C_bar
-        K = ifft(K_hat(C_tilda, self.Q, self._lambda, self.B, self.P, self.delta, L), n=L)
-        return K
+        K_bar = ifft(K_hat(C_tilda, self.Q, self._lambda, self.B, self.P, self.delta, L), n=L)
+        return K_bar
     
     def forward(self, u):
         return self.K(len(u)) @ u + self.D * u
