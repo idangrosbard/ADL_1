@@ -4,7 +4,7 @@ from .encoder_llm import EncoderLLM
 
 class EncoderClf(nn.Module):
     def __init__(self, lm: EncoderLLM, d_hidden: int, n_cls: int) -> None:
-        super().__init__():
+        super().__init__()
         self.lm = lm
         self.fc = nn.Linear(d_hidden, n_cls)
 
