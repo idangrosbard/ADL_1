@@ -38,8 +38,12 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
         model.eval()
 
     total_loss = 0
-    for batch in tqdm(dataloader, desc='train' if train else 'eval'):
-        total_loss += do_batch(model, batch, optimizer, loss, writer, device, train, transformer) / len(dataloader)
+    pbar = tqdm(dataloader, desc='train' if train else 'eval')
+    for batch in pbar:
+        batch_loss = do_batch(model, batch, optimizer, loss, writer, device, train, transformer) / len(dataloader)
+        total_loss += batch_loss
+        pbar.set_description(f'{"train" if train else "eval"}, Loss: {batch_loss}')
+
     writer.add_scalar(f'{"train" if train else "eval"}/epoch_loss', total_loss)
     writer.flush()
     return total_loss
