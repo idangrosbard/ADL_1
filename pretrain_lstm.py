@@ -18,7 +18,7 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
 
     h, c = None, None
     for t in range(1, labels.shape[1]):
-        logits, h, c = model(b_inp[:, t], h, c)
+        logits, h, c = model(b_inp[:, t - 1], h, c)
         loss = loss_fn(logits, labels[:, t])
     
     if train:
