@@ -8,20 +8,18 @@ class LSTM_LM(nn.Module):
         super(LSTM_LM, self).__init__()
 
         self.embed = nn.Embedding(corpus_size, d_input, corpus_size - 1)
-        self.lstm_blocks = LSTMBlock(d_input, d_hidden, n_layers)
+        self.lstm_blocks = nn.ModuleList([LSTMBlock(d_input if i == 0 else d_hidden, d_hidden) for i in range(n_layers)])
         self.o = nn.Linear(d_hidden, corpus_size)
-        
-        self.h0s = [nn.Parameter(Tensor(d_hidden)) for _ in range(n_layers)]
-        self.c0s = [nn.Parameter(Tensor(d_hidden)) for _ in range(n_layers)]
     
     def forward(self, x: Tensor, hs: Optional[Tensor], cs: Optional[Tensor]) -> Tuple[Tensor, List[Tensor], List[Tensor]]:
         x = self.embed(x)
-        b_size = x.shape[0]
-        if hs is None:
-            hs = [h0.repeat((b_size,1)) for h0 in self.h0s]
-        if cs is None:
-            cs = [c0.repeat((b_size,1)) for c0 in self.c0s]
-        
-        hs, cs = self.lstm_blocks(x, hs, cs)
+        hs, cs = [], []
+        for i in range(len(self.lstm_blocks)):
+            if hs is not None:
+                h, c = self.lstm_blocks[i](x, hs[i], cs[i])
+            else:
+                h, c = self.lstm_blocks[i](x, None, None)
+            hs.append(h)
+            cs.append(c)
         
         return self.o(hs[-1]), hs, cs
