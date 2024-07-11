@@ -2,19 +2,18 @@ import torch
 from torch import nn, Tensor
 from .s4d_layer import S4DLayer
 
-
 class S4Block(nn.Module):
     def __init__(self, H: int, N: int, dropout: float = 0.5):
         super().__init__()
         
-        layers = nn.Sequential(
-            nn.Linear(H, H),
-            nn.ReLU(),
-            nn.Dropout(dropout),
+        self.layers = nn.Sequential(
             S4DLayer(H, N),
             nn.LayerNorm(H),
+            nn.Linear(H, H),
             nn.ReLU(),
-            nn.Dropout(dropout))
+            nn.Linear(H, H),
+            nn.ReLU(),
+            nn.Dropout(dropout),)
         
     def forward(self, x: Tensor) -> Tensor:
         return x + self.layers(x)
@@ -26,7 +25,7 @@ class S4Model(nn.Module):
         self.vocab_size = vocab_size
         self.output_dim = output_dim
         self.N_layers = N_layers
-        self.emb = nn.Embedding(vocab_size, H)
+        self.emb = nn.Embedding(vocab_size, H, padding_idx=28440)
         self.use_token_clf = True
         
         layers = [S4Block(H, N, dropout) for _ in range(N_layers)]

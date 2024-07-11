@@ -37,7 +37,7 @@ class LSTMBlock(nn.Module):
         self.block = nn.ModuleList([LSTM(d_input if i == 0 else d_hidden, d_hidden) for i in range(n_layers)])
         
         self.mlps = nn.ModuleList([
-            nn.Sequential(*[nn.Linear(d_hidden, d_hidden), nn.ReLU(), nn.Dropout(dropout)]) 
+            nn.Sequential(*[nn.Linear(d_hidden, d_hidden), nn.ReLU(), nn.Dropout(dropout), nn.LayerNorm(d_hidden)]) 
             for i in range(n_layers)])
 
     def forward(self, x: Tensor, hs: List[Tensor], cs: List[Tensor]) -> Tuple[Tensor, Tensor]:

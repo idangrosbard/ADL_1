@@ -8,30 +8,39 @@ from pathlib import Path
 DEBUG = False
 
 
-def setup_tokenizer():
+def setup_tokenizer(use_default: bool = True):
     finetuned_tokenizer_path = Path('/content/ADL_1/wikitext-103-tokenizer-finetuned-lra')
+    if use_default:
+        tokenizer = GPT2TokenizerFast.from_pretrained("Kristijan/wikitext-103-tokenizer")
+        tokenizer.add_special_tokens({"mask_token": "<MASK>"})
+        tokenizer.add_special_tokens({'pad_token': '<PAD>'})
+        return tokenizer
     if finetuned_tokenizer_path.exists():
         print('Found tokenizer')
-        return GPT2TokenizerFast.from_pretrained(str(finetuned_tokenizer_path))
-    
-    tokenizer = GPT2TokenizerFast.from_pretrained("Kristijan/wikitext-103-tokenizer")
-    tokenizer.add_special_tokens({"mask_token": "<MASK>"})
-    tokenizer.add_special_tokens({'pad_token': '<PAD>'})
+        new_tokenizer = GPT2TokenizerFast.from_pretrained(str(finetuned_tokenizer_path))
+    else:
+        tokenizer = GPT2TokenizerFast.from_pretrained("Kristijan/wikitext-103-tokenizer")
+        tokenizer.add_special_tokens({"mask_token": "<MASK>"})
+        tokenizer.add_special_tokens({'pad_token': '<PAD>'})
 
-    lra_path = Path(r'C:\Users\idg77\University\gylab\aclImdb\train')
+        lra_path = Path(r'C:\Users\idg77\University\gylab\aclImdb\train')
 
-    cls_generator = (f for f in lra_path.iterdir() if f.is_dir())
-    
-    def get_file_txt(pth: Path):
-        with open(pth, 'r', encoding="utf8") as f:
-            return f.read()
+        cls_generator = (f for f in lra_path.iterdir() if f.is_dir())
+        
+        def get_file_txt(pth: Path):
+            with open(pth, 'r', encoding="utf8") as f:
+                return f.read()
 
-    sample_generator = ((get_file_txt(sample) for sample in cls_dir.iterdir()) for cls_dir in cls_generator)
-    new_tokenizer = tokenizer.train_new_from_iterator(sample_generator, 52000)
-    
-    # save pretrained tokenizer to disk
-    new_tokenizer.save_pretrained("./wikitext-103-tokenizer-finetuned-lra")
+        sample_generator = ((get_file_txt(sample) for sample in cls_dir.iterdir()) for cls_dir in cls_generator)
+        new_tokenizer = tokenizer.train_new_from_iterator(sample_generator, 28441)
+        
+        # save pretrained tokenizer to disk
+        new_tokenizer.save_pretrained("./wikitext-103-tokenizer-finetuned-lra")
 
+    encoded_input = new_tokenizer('<PAD>', truncation=True, padding=False, return_tensors="pt")
+    print(f"PAD: {encoded_input}")
+    encoded_input = new_tokenizer('<MASK>', truncation=True, padding=False, return_tensors="pt")
+    print(f"MASK: {encoded_input}")
     
     return new_tokenizer
 
