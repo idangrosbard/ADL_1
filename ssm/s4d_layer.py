@@ -8,7 +8,8 @@ class S4DLayer(nn.Module):
         super().__init__()
         self.H = H
         self.N = N
-        self.log_delta = nn.Parameter(torch.rand((H, 1), dtype=torch.float32) * (torch.log(tensor(dt_max)) - torch.log(tensor(dt_min))) + torch.log(tensor(dt_min)))
+        log_delta = nn.Parameter(torch.rand((H, 1), dtype=torch.float32) * (torch.log(tensor(dt_max)) - torch.log(tensor(dt_min))) + torch.log(tensor(dt_min)))
+        self.register_buffer('log_delta', log_delta)
         log_A_real = nn.Parameter(torch.log(0.5 * torch.ones((H, N // 2), dtype=torch.float32)))
         A_imag = nn.Parameter(torch.tensor(torch.pi * torch.arange(N // 2).repeat((H,1)), dtype=torch.float32))
         self.register_buffer('A_imag', A_imag)
