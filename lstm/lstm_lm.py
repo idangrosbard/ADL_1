@@ -21,7 +21,7 @@ class LSTM_LM(nn.Module):
               new_hs.append(new_h)
               new_cs.append(new_c)
         else:
-          for block, h, c in range(zip(self.lstm_blocks, hs, cs)):
+          for block, h, c in zip(self.lstm_blocks, hs, cs):
               new_h = x
               new_h, new_c = block(new_h, h, c)
               
