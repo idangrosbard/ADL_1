@@ -21,9 +21,18 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
         logits = model(b_inp)
 
 
-    if True:
+    if False:
         logits = logits.view(-1, logits.shape[-1])
         labels = labels.view(-1)
+    if True:
+        # labels of shape [b, l]
+        # from each batch gather only the logits that correspond to the labels that are not -100
+        print((labels != -100).sum())
+        logits = logits[labels != -100]
+        labels = labels[labels != -100]
+        print(logits.shape)
+        print(labels.shape)
+
     # if True:
     #     logits = logits[]
     loss = loss_fn(logits, labels)
@@ -112,3 +121,4 @@ if __name__ == '__main__':
 
     torch.save(model.state_dict(), 'model.pth')
     
+
