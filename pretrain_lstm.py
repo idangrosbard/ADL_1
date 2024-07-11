@@ -49,18 +49,18 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
     for e in range(epochs):
         total_loss = do_epoch(model, train_dataloader, optimizer, loss_fn, writer, device)
         print(f'train loss: {total_loss}')
-        writer.add_scalar(f'train/epoch_loss', total_loss, global_step , e)
+        writer.add_scalar(f'train/epoch_loss', total_loss, e)
         writer.flush()
         
         if e % eval_every == 0:
             total_loss = do_epoch(model, eval_dataloader, optimizer, loss_fn, writer, device, train=False)
             print(f'eval loss: {total_loss}')
-            writer.add_scalar(f'eval/epoch_loss', total_loss, global_step , e)
+            writer.add_scalar(f'eval/epoch_loss', total_loss, e)
             writer.flush()
     
     total_loss = do_epoch(model, test_dataloader, optimizer, loss_fn, writer, device, train=False)
     print(f'Test loss: {total_loss}')
-    writer.add_scalar(f'test/epoch_loss', total_loss, global_step , e)
+    writer.add_scalar(f'test/epoch_loss', total_loss, e)
     writer.flush()
     return model
 
