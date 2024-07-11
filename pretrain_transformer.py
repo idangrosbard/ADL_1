@@ -5,6 +5,18 @@ from torch.utils.tensorboard import SummaryWriter
 from transformer import EncoderLLM
 from dataset import setup_dataloaders
 from ssm import S4Model
+from argparse import ArgumentParser
+
+
+def get_args():
+    parser = ArgumentParser()
+    parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--bsize', type=int, default=64)
+    parser.add_argument('--lr', type=float, default=1e-5)
+    parser.add_argument('--max_lr', type=float, default=1e-3)
+    parser.add_argument('--model', type=str, default='s4', choices=['s4', 'transformer'])
+
+    return parser.parse_args()
 
 
 
@@ -94,17 +106,20 @@ def get_s4_llm(vocab_size, writer: SummaryWriter = None):
     return model
 
 if __name__ == '__main__':
-    N_epochs = 10
-    bsize = 64
-    lr = 1e-5
-    max_lr = 1e-3
+    args = get_args()
+    N_epochs = args.epochs
+    bsize = args.bsize
+    lr = args.lr
+    max_lr = args.max_lr
     
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     writer=SummaryWriter()
 
     train_dl, eval_dl, test_dl = setup_dataloaders(bsize, 'wikitext', 's4')
-    model = get_transformer_llm(train_dl.dataset.tokenizer.vocab_size, writer)
-    model = get_s4_llm(train_dl.dataset.tokenizer.vocab_size, writer)
+    if args.model == 'transformer':
+        model = get_transformer_llm(train_dl.dataset.tokenizer.vocab_size, writer)
+    else:
+        model = get_s4_llm(train_dl.dataset.tokenizer.vocab_size, writer)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     # add gradient clipping:
