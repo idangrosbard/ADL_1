@@ -4,7 +4,7 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 from transformer import EncoderLLM
 from dataset import setup_dataloaders
-from ssm.s4_model import S4Model
+from ssm import S4Model
 
 
 

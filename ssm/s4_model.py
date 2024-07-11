@@ -19,18 +19,18 @@ class S4Model(nn.Module):
             layers.append(nn.ReLU())
             layers.append(nn.Dropout(dropout))
             layers.append(S4DLayer(H, N))
-            layers.append(nn.Linear(H, H))
             layers.append(nn.ReLU())
             layers.append(nn.Dropout(dropout))
 
-        self.layers = nn.Sequential(*layers)
+        self.layers = nn.ModuleList(*layers)
 
         self.out = nn.Linear(H, output_dim)
 
     
     def forward(self, x: Tensor) -> Tensor:
         x = self.emb(x)
-        x = self.layers(x)
+        for layer in self.layers:
+            x = layer(x) + x
         
         if self.use_token_clf:
             x = self.out(x)
