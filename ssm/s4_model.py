@@ -22,7 +22,7 @@ class S4Model(nn.Module):
             layers.append(nn.ReLU())
             layers.append(nn.Dropout(dropout))
 
-        self.layers = nn.ModuleList(*layers)
+        self.layers = nn.ModuleList(layers)
 
         self.out = nn.Linear(H, output_dim)
 
