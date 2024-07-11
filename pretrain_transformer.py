@@ -27,14 +27,9 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     if True:
         # labels of shape [b, l]
         # from each batch gather only the logits that correspond to the labels that are not -100
-        print((labels != -100).sum())
         logits = logits[labels != -100]
         labels = labels[labels != -100]
-        print(logits.shape)
-        print(labels.shape)
 
-    # if True:
-    #     logits = logits[]
     loss = loss_fn(logits, labels)
     
     if train:
@@ -92,7 +87,7 @@ def get_s4_llm(vocab_size, writer: SummaryWriter = None):
     
     H = 256
     N = 16
-    n_layers = 1
+    n_layers = 3
     writer.add_hparams({'H': H, 'N': N, 'n_layers': n_layers}, {})
     model = S4Model(H, N, vocab_size + 2, vocab_size + 2, n_layers)
     return model
