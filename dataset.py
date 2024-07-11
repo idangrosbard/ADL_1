@@ -121,7 +121,7 @@ def setup_lra_ar_dataloaders(batch_size: int = 2, model: str = 'lstm'):
     t0 = time.time()
     train_ds = LRAARDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\train'))
     test_ds = LRAARDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\test'))
-    dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=True, mlm_probability=0.15 if model != 'lstm' else 0)
+    dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=(model != 'lstm'), mlm_probability=0.15 if model != 'lstm' else 0)
 
     train_dl = data.DataLoader(train_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
     test_dl = data.DataLoader(test_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
@@ -153,7 +153,7 @@ def setup_wikitext_dataloaders(batch_size: int = 2, model: str = 'lstm'):
         eval_ds = WikiTextDataset(ds['validation'])
         test_ds = WikiTextDataset(ds['test'])
 
-    dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=True, mlm_probability=0.15 if model != 'lstm' else 0)
+    dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=(model != 'lstm'), mlm_probability=0.15 if model != 'lstm' else 0)
 
     train_dl = data.DataLoader(train_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
     eval_dl = data.DataLoader(eval_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
