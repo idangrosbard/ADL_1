@@ -5,12 +5,14 @@ from transformers import DataCollatorForLanguageModeling, default_data_collator
 from transformers import GPT2TokenizerFast
 import time
 from pathlib import Path
-DEBUG = True
+DEBUG = False
 
 
 def setup_tokenizer():
-    if Path("./wikitext-103-tokenizer-finetuned-lra").exists():
-        return GPT2TokenizerFast.from_pretrained("./wikitext-103-tokenizer-finetuned-lra")
+    finetuned_tokenizer_path = Path('/content/ADL_1/wikitext-103-tokenizer-finetuned-lra')
+    if finetuned_tokenizer_path.exists():
+        print('Found tokenizer')
+        return GPT2TokenizerFast.from_pretrained(str(finetuned_tokenizer_path))
     
     tokenizer = GPT2TokenizerFast.from_pretrained("Kristijan/wikitext-103-tokenizer")
     tokenizer.add_special_tokens({"mask_token": "<MASK>"})

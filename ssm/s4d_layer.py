@@ -20,8 +20,11 @@ class S4DLayer(nn.Module):
         delta = torch.exp(self.log_delta)
         A = -torch.exp(self.log_A_real) + 1j * self.A_imag
         dA = (1 + delta * A / 2) / (1 - delta * A / 2)
+        K = 2 * torch.einsum('hn,hnl->hl', self.B * self.C, (dA.unsqueeze(-1) ** torch.arange(L, device=dA.device))).real
 
-        return 2 * torch.einsum('hn,hnl->hl', self.B * self.C, (dA.unsqueeze(-1) ** torch.arange(L))).real
+        del delta, A, dA
+
+        return K
         
     def forward(self, u: Tensor): # Shape of u: (batch_size, L, H)
         L = u.shape[-2]
@@ -35,6 +38,8 @@ class S4DLayer(nn.Module):
         y = fft.irfft(K_f * u_f, n=2*L)[..., :L]
         y = y + u * self.D.unsqueeze(-1)
         y = y.transpose(-2,-1)
+
+        del K, K_f, u_f
 
         return y
     

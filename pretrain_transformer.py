@@ -10,17 +10,18 @@ from ssm.s4_model import S4Model
 
 def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, train: bool = True, transformer: bool = True):
     optimizer.zero_grad()
-    b_inp = batch['input_ids'].to(device).long()
-    filtered_labels = batch['labels'][batch['labels'] > -100].long()
-    filtered_labels = filtered_labels.to(device, non_blocking=True)
+    b_inp = batch['input_ids'].to(device, non_blocking=True).long()
+    labels = batch['labels'].long()
+    labels = labels.to(device, non_blocking=True)
+    attn = batch['attention_mask'].to(device, non_blocking=True)
 
     if transformer:
-        logits = model(b_inp, batch['attention_mask'])
+        logits = model(b_inp, attn)
     else:
         logits = model(b_inp)
-    logits = logits[batch['labels'] > -100]
+    # logits = logits[batch['labels'] > -100]
 
-    loss = loss_fn(logits, filtered_labels)
+    loss = loss_fn(logits, labels)
     
     if train:
         loss.backward()
@@ -37,8 +38,11 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
         model.eval()
 
     total_loss = 0
-    for batch in tqdm(dataloader, desc='train' if train else 'eval'):
-        total_loss += do_batch(model, batch, optimizer, loss, writer, device, train, transformer) / len(dataloader)
+    pbar = tqdm(dataloader, desc='train' if train else 'eval')
+    for batch in pbar:
+        batch_loss = do_batch(model, batch, optimizer, loss, writer, device, train, transformer) / len(dataloader)
+        total_loss += batch_loss
+        pbar.set_description(f'{"train" if train else "eval"}, Loss: {batch_loss}')
     writer.add_scalar(f'{"train" if train else "eval"}/epoch_loss', total_loss)
     writer.flush()
     return total_loss
@@ -60,11 +64,11 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
 
 
 def get_transformer_llm(vocab_size, writer: SummaryWriter = None):
-    model_d = 16
+    model_d = 128
     attn_d = 64
-    n_heads = 8
+    n_heads = 4
     ff_d = 256
-    n_layers = 3
+    n_layers = 4
     writer.add_hparams({'model_d': model_d, 'attn_d': attn_d, 'n_heads': n_heads, 'ff_d': ff_d, 'n_layers': n_layers}, {})
     model = EncoderLLM(vocab_size + 2, model_d, attn_d, ff_d, n_heads, n_layers)
     return model
@@ -72,18 +76,18 @@ def get_transformer_llm(vocab_size, writer: SummaryWriter = None):
 
 def get_s4_llm(vocab_size, writer: SummaryWriter = None):
     
-    H = 16
+    H = 256
     N = 64
-    n_layers = 3
+    n_layers = 6
     writer.add_hparams({'H': H, 'N': N, 'n_layers': n_layers}, {})
     model = S4Model(H, N, vocab_size + 2, vocab_size + 2, n_layers)
     return model
 
 if __name__ == '__main__':
     N_epochs = 10
-    bsize = 1
+    bsize = 64
     lr = 1e-5
-    max_lr = 1e-4
+    max_lr = 1e-3
     
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     writer=SummaryWriter()
@@ -97,8 +101,9 @@ if __name__ == '__main__':
     loss_fn = torch.nn.CrossEntropyLoss()
     writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr}, {})
     
-    model = train(model, train_dl, eval_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs, transformer=(type(model) == EncoderLLM))
     model.to(dev)
+    model = train(model, train_dl, eval_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs, transformer=(type(model) == EncoderLLM))
+    
 
     torch.save(model.state_dict(), 'model.pth')
     
