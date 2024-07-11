@@ -25,7 +25,7 @@ class LSTM_LM(nn.Module):
               new_h = x
               new_h, new_c = block(new_h, h, c)
               
-              new_hs.append(h)
-              new_cs.append(c)
+              new_hs.append(new_h)
+              new_cs.append(new_c)
         
-        return self.o(hs[-1]), new_hs, new_cs
+        return self.o(new_h), new_hs, new_cs
