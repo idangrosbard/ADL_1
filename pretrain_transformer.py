@@ -21,7 +21,7 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
         logits = model(b_inp)
 
 
-    if False:
+    if True:
         logits = logits.view(-1, logits.shape[-1])
         labels = labels.view(-1)
     # if True:
