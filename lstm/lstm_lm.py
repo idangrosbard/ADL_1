@@ -17,9 +17,9 @@ class LSTM_LM(nn.Module):
         new_cs = []
         if hs is None:
           for i in range(len(self.lstm_blocks)):
-              h, c = self.lstm_blocks[i](x, None, None)
-              new_hs.append(h)
-              new_cs.append(c)
+              new_h, new_c = self.lstm_blocks[i](x, None, None)
+              new_hs.append(new_h)
+              new_cs.append(new_c)
         else:
           for block, h, c in range(zip(self.lstm_blocks, hs, cs)):
               new_h = x
