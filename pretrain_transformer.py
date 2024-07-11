@@ -7,6 +7,8 @@ from dataset import setup_dataloaders
 from ssm import S4Model
 from argparse import ArgumentParser
 
+global_step = 0
+
 
 def get_args():
     parser = ArgumentParser()
@@ -62,11 +64,15 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
     total_loss = 0
     pbar = tqdm(dataloader, desc='train' if train else 'eval')
     for batch in pbar:
-        batch_loss = do_batch(model, batch, optimizer, loss, writer, device, train, transformer) / len(dataloader)
-        total_loss += batch_loss
+        batch_loss = do_batch(model, batch, optimizer, loss, writer, device, train, transformer)
+        total_loss += batch_loss / len(dataloader)
         pbar.set_description(f'{"train" if train else "eval"}, Loss: {batch_loss}')
-    writer.add_scalar(f'{"train" if train else "eval"}/epoch_loss', total_loss)
-    writer.flush()
+        
+        writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', batch_loss, global_step)
+        writer.flush()
+        global_step += 1
+    
+    
     return total_loss
 
 
@@ -74,12 +80,18 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
     for e in range(epochs):
         total_loss = do_epoch(model, train_dataloader, optimizer, loss_fn, writer, device, transformer=transformer)
         print(f'train loss: {total_loss}')
+        writer.add_scalar(f'train/epoch_loss', total_loss, e)
+        writer.flush()
         
         if e % eval_every == 0:
             total_loss = do_epoch(model, eval_dataloader, optimizer, loss_fn, writer, device, train=False, transformer=transformer)
+            writer.add_scalar(f'val/epoch_loss', total_loss, e)
+            writer.flush()
             print(f'eval loss: {total_loss}')
     
     total_loss = do_epoch(model, test_dataloader, optimizer, loss_fn, writer, device, train=False, transformer=transformer)
+    writer.add_scalar(f'test/epoch_loss', total_loss, e)
+    writer.flush()
     print(f'Test loss: {total_loss}')
     return model
 

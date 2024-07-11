@@ -8,7 +8,7 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
 
-
+global_step = 0
 
 
 def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, train: bool = True):
@@ -38,11 +38,12 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
     total_loss = 0
     pbar = tqdm(dataloader, desc='train' if train else 'eval')
     for batch in pbar:
-        b_loss = do_batch(model, batch, optimizer, loss, writer, device, train) / len(dataloader)
-        total_loss += b_loss
+        b_loss = do_batch(model, batch, optimizer, loss, writer, device, train)
+        total_loss += b_loss / len(dataloader)
         pbar.set_description(f'{"train" if train else "eval"}, Loss: {b_loss}')
-    writer.add_scalar(f'{"train" if train else "eval"}/epoch_loss', total_loss)
-    writer.flush()
+        writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', b_loss, global_step)
+        writer.flush()
+        global_step += 1
     return total_loss
 
 
@@ -50,13 +51,19 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
     for e in range(epochs):
         total_loss = do_epoch(model, train_dataloader, optimizer, loss_fn, writer, device)
         print(f'train loss: {total_loss}')
+        writer.add_scalar(f'train/epoch_loss', total_loss, global_step , e)
+        writer.flush()
         
         if e % eval_every == 0:
             total_loss = do_epoch(model, eval_dataloader, optimizer, loss_fn, writer, device, train=False)
             print(f'eval loss: {total_loss}')
+            writer.add_scalar(f'eval/epoch_loss', total_loss, global_step , e)
+            writer.flush()
     
     total_loss = do_epoch(model, test_dataloader, optimizer, loss_fn, writer, device, train=False)
     print(f'Test loss: {total_loss}')
+    writer.add_scalar(f'test/epoch_loss', total_loss, global_step , e)
+    writer.flush()
     return model
 
 if __name__ == '__main__':
