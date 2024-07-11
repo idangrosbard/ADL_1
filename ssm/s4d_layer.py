@@ -12,7 +12,7 @@ class S4DLayer(nn.Module):
         self.log_A_real = nn.Parameter(torch.log(0.5 * torch.ones((H, N // 2), dtype=torch.float32)))
         self.A_imag = nn.Parameter(torch.tensor(torch.pi * torch.arange(N // 2).repeat((H,1)), dtype=torch.float32))
         self.B = nn.Parameter(torch.ones((H, N // 2), dtype=torch.float32))
-        self.C = nn.Parameter(torch.randn((H, N // 2), dtype=torch.complex32).view_as_real())
+        self.C = nn.Parameter(torch.view_as_real(torch.randn((H, N // 2), dtype=torch.complex32)))
         self.D = nn.Parameter(torch.randn((H), dtype=torch.float32))
         
     
@@ -20,7 +20,7 @@ class S4DLayer(nn.Module):
         delta = torch.exp(self.log_delta)
         A = -torch.exp(self.log_A_real) + 1j * self.A_imag
         dA = (1 + delta * A / 2) / (1 - delta * A / 2)
-        K = 2 * torch.einsum('hn,hnl->hl', self.B * self.C.view_as_complex(), (dA.unsqueeze(-1) ** torch.arange(L, device=dA.device))).real
+        K = 2 * torch.einsum('hn,hnl->hl', self.B * torch.view_as_complex(self.C), (dA.unsqueeze(-1) ** torch.arange(L, device=dA.device))).real
 
         del delta, A, dA
 
