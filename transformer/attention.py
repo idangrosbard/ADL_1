@@ -11,9 +11,9 @@ class Attention(nn.Module):
         self.d_attn = d_attn
         self.cross_attention = cross_attention
 
-        self.q = nn.Linear(d_model, d_attn)
-        self.k = nn.Linear(d_model, d_attn)
-        self.v = nn.Linear(d_model, d_attn)
+        self.q = nn.Linear(d_model, d_attn, bias=False)
+        self.k = nn.Linear(d_model, d_attn, bias=False)
+        self.v = nn.Linear(d_model, d_attn, bias=False)
         self.softmax = nn.Softmax(dim=-1)
 
         self.o = nn.Linear(d_attn, d_model)

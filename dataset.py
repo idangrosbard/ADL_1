@@ -103,7 +103,7 @@ class LRAARDataset(data.Dataset):
         return self.tokenizer(samp)
 
 
-def setup_lra_clf_dataloaders(batch_size: int = 2):
+def setup_lra_clf_dataloaders(batch_size: int = 2, model: str = 'lstm'):
     t0 = time.time()
     train_ds = LRAClfDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\train'))
     test_ds = LRAClfDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\test'))
@@ -117,11 +117,11 @@ def setup_lra_clf_dataloaders(batch_size: int = 2):
     return train_dl, test_dl
 
 
-def setup_lra_ar_dataloaders(batch_size: int = 2):
+def setup_lra_ar_dataloaders(batch_size: int = 2, model: str = 'lstm'):
     t0 = time.time()
     train_ds = LRAARDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\train'))
     test_ds = LRAARDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\test'))
-    dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=True, mlm_probability=0.15)
+    dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=True, mlm_probability=0.15 if model != 'lstm' else 0)
 
     train_dl = data.DataLoader(train_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
     test_dl = data.DataLoader(test_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
@@ -130,7 +130,7 @@ def setup_lra_ar_dataloaders(batch_size: int = 2):
     return train_dl, test_dl
 
 
-def setup_wikitext_dataloaders(batch_size: int = 2):
+def setup_wikitext_dataloaders(batch_size: int = 2, model: str = 'lstm'):
     t0 = time.time()
     if DEBUG:
         cache_path = Path('./cache.ds')
@@ -153,7 +153,7 @@ def setup_wikitext_dataloaders(batch_size: int = 2):
         eval_ds = WikiTextDataset(ds['validation'])
         test_ds = WikiTextDataset(ds['test'])
 
-    dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=True, mlm_probability=0.15)
+    dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=True, mlm_probability=0.15 if model != 'lstm' else 0)
 
     train_dl = data.DataLoader(train_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
     eval_dl = data.DataLoader(eval_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
@@ -164,12 +164,12 @@ def setup_wikitext_dataloaders(batch_size: int = 2):
     return train_dl, eval_dl, test_dl
 
 
-def setup_dataloaders(batch_size: int = 2, dataset: str = 'wikitext'):
+def setup_dataloaders(batch_size: int = 2, dataset: str = 'wikitext', model: str = 'lstm'):
     if dataset == 'wikitext':
-        return setup_wikitext_dataloaders(batch_size)
+        return setup_wikitext_dataloaders(batch_size, model)
     elif dataset == 'lra_clf':
-        return setup_lra_clf_dataloaders(batch_size)
+        return setup_lra_clf_dataloaders(batch_size, model)
     elif dataset == 'lra_ar':
-        return setup_lra_ar_dataloaders(batch_size)
+        return setup_lra_ar_dataloaders(batch_size, model)
     else:
         raise ValueError(f'Unknown dataset: {dataset}')

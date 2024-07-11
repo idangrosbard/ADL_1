@@ -67,7 +67,7 @@ if __name__ == '__main__':
     
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    train_dl, eval_dl, test_dl = setup_dataloaders(bsize)
+    train_dl, eval_dl, test_dl = setup_dataloaders(bsize, 'wikitext', 'lstm')
     model = LSTM_LM(train_dl.dataset.tokenizer.vocab_size + 2, d_input, hidden_d, n_layers)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_dl), epochs=N_epochs)
@@ -75,8 +75,9 @@ if __name__ == '__main__':
     writer = SummaryWriter()
     writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr, 'd_input': d_input, 'hidden_d': hidden_d, 'n_layers': n_layers}, {})
     
-    model = train(model, train_dl, eval_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs)
     model.to(dev)
+    model = train(model, train_dl, eval_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs)
+    
 
     torch.save(model.state_dict(), 'model.pth')
     

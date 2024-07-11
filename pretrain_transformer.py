@@ -92,7 +92,7 @@ if __name__ == '__main__':
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     writer=SummaryWriter()
 
-    train_dl, eval_dl, test_dl = setup_dataloaders(bsize)
+    train_dl, eval_dl, test_dl = setup_dataloaders(bsize, 'wikitext', 's4')
     model = get_transformer_llm(train_dl.dataset.tokenizer.vocab_size, writer)
     model = get_s4_llm(train_dl.dataset.tokenizer.vocab_size, writer)
     
