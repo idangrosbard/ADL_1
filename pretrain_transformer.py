@@ -34,6 +34,7 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     
     if train:
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
         optimizer.step()
     writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', loss.item())
     writer.flush()
@@ -106,6 +107,8 @@ if __name__ == '__main__':
     model = get_s4_llm(train_dl.dataset.tokenizer.vocab_size, writer)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+    # add gradient clipping:
+    
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_dl), epochs=N_epochs)
     loss_fn = torch.nn.CrossEntropyLoss()
     writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr}, {})
