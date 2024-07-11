@@ -19,8 +19,13 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
         logits = model(b_inp, attn)
     else:
         logits = model(b_inp)
-    # logits = logits[batch['labels'] > -100]
 
+
+    if False:
+        logits = logits.view(-1, logits.shape[-1])
+        labels = labels.view(-1)
+    # if True:
+    #     logits = logits[]
     loss = loss_fn(logits, labels)
     
     if train:
@@ -77,8 +82,8 @@ def get_transformer_llm(vocab_size, writer: SummaryWriter = None):
 def get_s4_llm(vocab_size, writer: SummaryWriter = None):
     
     H = 256
-    N = 64
-    n_layers = 6
+    N = 16
+    n_layers = 1
     writer.add_hparams({'H': H, 'N': N, 'n_layers': n_layers}, {})
     model = S4Model(H, N, vocab_size + 2, vocab_size + 2, n_layers)
     return model
