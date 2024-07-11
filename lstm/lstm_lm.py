@@ -14,7 +14,7 @@ class LSTM_LM(nn.Module):
         self.h0s = [nn.Parameter(Tensor(d_hidden)) for _ in range(n_layers)]
         self.c0s = [nn.Parameter(Tensor(d_hidden)) for _ in range(n_layers)]
     
-    def forward(self, x: Tensor, hs: Optional[Tensor], cs: Optional[Tensor]) -> Tuple[List[Tensor], List[Tensor]]:
+    def forward(self, x: Tensor, hs: Optional[Tensor], cs: Optional[Tensor]) -> Tuple[Tensor, List[Tensor], List[Tensor]]:
         x = self.embed(x)
         b_size = x.shape[0]
         if hs is None:

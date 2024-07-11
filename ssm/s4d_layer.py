@@ -1,5 +1,5 @@
 import torch
-from torch import nn, fft, tensor
+from torch import nn, fft, tensor, Tensor
 import numpy as np
 
 
@@ -16,14 +16,14 @@ class S4DLayer(nn.Module):
         self.D = nn.Parameter(torch.randn((H), dtype=torch.float32))
         
     
-    def kernel(self, L):
+    def kernel(self, L: int):
         delta = torch.exp(self.log_delta)
         A = -torch.exp(self.log_A_real) + 1j * self.A_imag
         dA = (1 + delta * A / 2) / (1 - delta * A / 2)
 
         return 2 * torch.einsum('hn,hnl->hl', self.B * self.C, (dA.unsqueeze(-1) ** torch.arange(L))).real
         
-    def forward(self, u): # Shape of u: (batch_size, L, H)
+    def forward(self, u: Tensor): # Shape of u: (batch_size, L, H)
         L = u.shape[-2]
         # u = u.squeeze(0)
         u = u.transpose(-2,-1)

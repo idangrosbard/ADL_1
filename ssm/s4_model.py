@@ -11,6 +11,7 @@ class S4Model(nn.Module):
         self.output_dim = output_dim
         self.N_layers = N_layers
         self.emb = nn.Embedding(vocab_size, H)
+        self.use_token_clf = True
         
         layers = []
         for _ in range(N_layers):
@@ -27,8 +28,10 @@ class S4Model(nn.Module):
         self.out = nn.Linear(H, output_dim)
 
     
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.emb(x)
         x = self.layers(x)
-        x = self.out(x)
+        
+        if self.use_token_clf:
+            x = self.out(x)
         return x

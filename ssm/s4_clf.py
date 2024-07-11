@@ -6,9 +6,15 @@ from .s4_model import S4Model
 class S4Classifier(nn.Module):
     def __init__(self, s4_model: S4Model, d_hidden: int, n_classes: int):
         super(S4Classifier, self).__init__()
-
         self.s4 = s4_model
+        self.s4.use_token_clf = False
         self.fc = nn.Linear(d_hidden, n_classes)
     
-    def forward(self, x: Tensor) -> Tensor:
-        return self.fc(self.s4(x[:, -1])) # Take the last token, assume x.shape = [batch, seq_len, d_hidden]
+    def forward(self, x: Tensor, L: Tensor) -> Tensor:
+        
+        x = self.s4(x)
+        # Get the last hidden state of the last input token
+        L = (L - 1).unsqueeze(1)
+        last_x = x.gather(1, L.unsqueeze(2).expand(-1, -1, x.size(2))).squeeze(1)
+        y = self.fc(last_x)
+        return y.squeeze(1)

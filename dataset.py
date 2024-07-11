@@ -1,7 +1,7 @@
 from datasets import load_dataset
 import torch
 from torch.utils import data
-from transformers import DataCollatorForLanguageModeling
+from transformers import DataCollatorForLanguageModeling, default_data_collator
 from transformers import GPT2TokenizerFast
 import time
 from pathlib import Path
@@ -70,9 +70,11 @@ class LRAClfDataset(data.Dataset):
     def __getitem__(self, idx):
         # add CLS
         samp, cls = self.samples[idx]
-        with open(samp, 'r') as f:
+        with open(samp, 'r', encoding='utf8') as f:
             samp = f.read()
-        return self.tokenizer(samp), self.cls_map.index(cls)
+        dict = self.tokenizer(samp)
+        dict['label'] = self.cls_map.index(cls)
+        return dict
 
 
 class LRAARDataset(data.Dataset):
@@ -94,17 +96,17 @@ class LRAARDataset(data.Dataset):
     def __getitem__(self, idx):
         # add CLS
         samp = self.samples[idx]
-        with open(samp, 'r') as f:
+        with open(samp, 'r', encoding='utf8') as f:
             samp = f.read()
         return self.tokenizer(samp)
-
 
 
 def setup_lra_clf_dataloaders(batch_size: int = 2):
     t0 = time.time()
     train_ds = LRAClfDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\train'))
     test_ds = LRAClfDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\test'))
-    dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=True, mlm_probability=0.15)
+
+    dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=False, mlm_probability=0)
 
     train_dl = data.DataLoader(train_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
     test_dl = data.DataLoader(test_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
