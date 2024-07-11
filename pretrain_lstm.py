@@ -8,8 +8,6 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
 
-global_step = 0
-
 
 def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, train: bool = True):
     optimizer.zero_grad()
@@ -67,6 +65,7 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
     return model
 
 if __name__ == '__main__':
+    global_step = 0
     N_epochs = 10
     bsize = 64
     lr = 1e-6

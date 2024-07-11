@@ -7,7 +7,7 @@ from dataset import setup_dataloaders
 from ssm import S4Model
 from argparse import ArgumentParser
 
-global_step = 0
+
 
 
 def get_args():
@@ -118,6 +118,7 @@ def get_s4_llm(vocab_size, writer: SummaryWriter = None):
     return model
 
 if __name__ == '__main__':
+    global_step = 0
     args = get_args()
     N_epochs = args.epochs
     bsize = args.bsize
