@@ -7,7 +7,7 @@ from tokenizers.processors import TemplateProcessing
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
-
+GLOBAL_STEP = 0
 
 def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, train: bool = True):
     optimizer.zero_grad()
@@ -39,9 +39,9 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
         b_loss = do_batch(model, batch, optimizer, loss, writer, device, train)
         total_loss += b_loss / len(dataloader)
         pbar.set_description(f'{"train" if train else "eval"}, Loss: {b_loss}')
-        writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', b_loss, global_step)
+        writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', b_loss, GLOBAL_STEP)
         writer.flush()
-        global_step += 1
+        GLOBAL_STEP += 1
     return total_loss
 
 
@@ -65,7 +65,6 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
     return model
 
 if __name__ == '__main__':
-    global_step = 0
     N_epochs = 10
     bsize = 64
     lr = 1e-6

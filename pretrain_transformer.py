@@ -7,7 +7,7 @@ from dataset import setup_dataloaders
 from ssm import S4Model
 from argparse import ArgumentParser
 
-
+GLOBAL_STEP = 0
 
 
 def get_args():
@@ -68,9 +68,9 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
         total_loss += batch_loss / len(dataloader)
         pbar.set_description(f'{"train" if train else "eval"}, Loss: {batch_loss}')
         
-        writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', batch_loss, global_step)
+        writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', batch_loss, GLOBAL_STEP)
         writer.flush()
-        global_step += 1
+        GLOBAL_STEP += 1
     
     
     return total_loss
@@ -118,7 +118,7 @@ def get_s4_llm(vocab_size, writer: SummaryWriter = None):
     return model
 
 if __name__ == '__main__':
-    global_step = 0
+    
     args = get_args()
     N_epochs = args.epochs
     bsize = args.bsize
