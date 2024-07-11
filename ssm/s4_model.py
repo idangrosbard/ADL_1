@@ -30,7 +30,7 @@ class S4Model(nn.Module):
         self.use_token_clf = True
         
         layers = [S4Block(H, N, dropout) for _ in range(N_layers)]
-        self.layers = nn.Sequential(layers)
+        self.layers = nn.Sequential(*layers)
 
         self.out = nn.Linear(H, output_dim)
 
