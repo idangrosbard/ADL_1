@@ -14,6 +14,7 @@ def setup_tokenizer(use_default: bool = True):
         tokenizer = GPT2TokenizerFast.from_pretrained("Kristijan/wikitext-103-tokenizer")
         tokenizer.add_special_tokens({"mask_token": "<MASK>"})
         tokenizer.add_special_tokens({'pad_token': '<PAD>'})
+        tokenizer.add_special_tokens({'eos_token': '<EOS>'})
         return tokenizer
     if finetuned_tokenizer_path.exists():
         print('Found tokenizer')
