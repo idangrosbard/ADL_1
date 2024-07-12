@@ -13,10 +13,8 @@ class Attention(nn.Module):
 
         self.q = nn.Linear(d_model, d_attn, bias=False)
         self.k = nn.Linear(d_model, d_attn, bias=False)
-        self.v = nn.Linear(d_model, d_attn, bias=False)
+        self.v = nn.Linear(d_model, d_model, bias=False)
         self.softmax = nn.Softmax(dim=-1)
-
-        self.o = nn.Linear(d_attn, d_model)
 
     
     def forward(self, x: Tensor, cross: Optional[Tensor] = None, mask: Optional[Tensor] = None):
@@ -42,10 +40,11 @@ class Attention(nn.Module):
             square_mask = square_mask @ square_mask.transpose(-1, -2) # [b, l_x, l_x]
             logits = logits.where(square_mask == 1, float('-inf')) # set -inf to the masked positions
 
-        attn = self.softmax(logits / (self.d_model ** 0.5)) # get distribution
+        attn = self.softmax(logits / (self.d_attn ** 0.5)) # get distribution
 
         attn_out = attn @ v # get new reps [b, l_x, d]
-        return self.o(attn_out)
+        assert attn_out.shape == x.shape
+        return attn_out
     
 
 class MultiHeadAttention(nn.Module):
@@ -59,6 +58,9 @@ class MultiHeadAttention(nn.Module):
     
     def forward(self, x: Tensor, cross: Optional[Tensor] = None, mask: Optional[Tensor] = None):
         multi_attention = torch.cat([attention(x, cross=cross, mask=mask) for attention in self.attentions], dim=-1)
-        return self.o(multi_attention)
+        assert multi_attention.shape == (x.shape[0], x.shape[1], self.d_model * self.n_heads)
+        out = self.o(multi_attention)
+        assert out.shape == x.shape
+        return out
 
         

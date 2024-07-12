@@ -14,6 +14,7 @@ import argparse
 def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, train: bool = True):
     optimizer.zero_grad()
     b_inp = batch['input_ids'].to(device, non_blocking=True).long()
+    mask = batch['attention_mask'].to(device, non_blocking=True)
 
     batch_losses = torch.zeros(b_inp.shape[1] - 1)
 
@@ -23,21 +24,26 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
             for t_tag in range(0, t):
                 logits, h, c = model(b_inp[:, t_tag], h, c)
             loss = loss_fn(logits, b_inp[:, t])
+
             if train:
                 loss.backward()
                 optimizer.step()
+            print(loss.item())
             batch_losses[t] = loss.item()
 
     elif type(model) == Decoder:
-        mask = batch['attention_mask'].to(device, non_blocking=True)
-        for t in range(1, b_inp.shape[1] - 1):
-            # Get the logits for all the tokens in the sequence, up to length t
+        
+        for t in range(1, b_inp.shape[1]):
+            # Get the logits for all the tokens in the sequence, up to length t (exclusive)
             logits = model(b_inp[:, :t], None, mask=mask[:, :t])
-            # Get only the logits for the last token in the sequence
-            logits = logits[:, -1, :]
-            # Calc loss, based on 0:t tokens, predict the t+1 token
             
-            loss = loss_fn(logits, b_inp[:, t + 1])
+            # Get only the logits for the last token in the input sequence
+            logits = logits[:, -1, :]
+
+            # Calc loss, based on 0:t (exclusive) tokens, predict the t token
+            loss = loss_fn(logits, b_inp[:, t])
+            # assert not nan
+            assert loss != torch.nan
             if train:
                 loss.backward()
                 optimizer.step()
@@ -99,12 +105,13 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
 
 
 def get_transformer_llm(vocab_size, writer: SummaryWriter = None):
-    model_d = 128
-    attn_d = 64
+    model_d = 512
     n_heads = 8
-    ff_d = 256
+    attn_d = model_d // n_heads
+    ff_d = 2048
     n_layers = 6
     writer.add_hparams({'model_d': model_d, 'attn_d': attn_d, 'n_heads': n_heads, 'ff_d': ff_d, 'n_layers': n_layers}, {})
+    # return torch.nn.Transformer(d_model=model_d, nhead=n_heads, num_encoder_layers=0, num_decoder_layers=n_layers, dim_feedforward=ff_d, dropout=0.1)
     model = Decoder(vocab_size + 2, model_d, attn_d, ff_d, n_heads, n_layers, vocab_size + 2, decoder_only=True, return_logits=True)
     return model
 
@@ -118,6 +125,15 @@ def get_lstm_llm(vocab_size, writer: SummaryWriter = None):
     return model
 
 
+def get_s4_llm(vocab_size, writer: SummaryWriter = None):
+    H = 256
+    N = 16
+    n_layers = 6
+    writer.add_hparams({'H': H, 'N': N, 'n_layers': n_layers}, {})
+    model = S4Model(H, N, vocab_size + 2, vocab_size + 2, n_layers)
+    return model
+
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_type', type=str, choices=['transformer', 'lstm', 's4'], default='lstm')
@@ -126,7 +142,7 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
-    N_epochs = 10
+    N_epochs = 1
     bsize = 64
     lr = 1e-5
     max_lr = 1e-3
@@ -143,12 +159,14 @@ if __name__ == '__main__':
         model = get_transformer_llm(train_dl.dataset.tokenizer.vocab_size, writer)
     elif args.model_type == 'lstm':
         model = get_lstm_llm(train_dl.dataset.tokenizer.vocab_size, writer)
+    elif args.model_type == 's4':
+        model = get_s4_llm(train_dl.dataset.tokenizer.vocab_size, writer)
     else:
         raise ValueError('Model type not supported')
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_dl), epochs=N_epochs)
-    loss_fn = torch.nn.CrossEntropyLoss()
+    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=train_dl.dataset.tokenizer.vocab_size+1) # ignore the padding index
     
     writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr, 'd_input': d_input, 'hidden_d': hidden_d, 'n_layers': n_layers}, {})
     
