@@ -1,4 +1,6 @@
 from lstm.lstm_lm import LSTM_LM
+from ssm import S4Model
+from transformer.decoder import Decoder
 import torch
 from dataset import setup_dataloaders
 import torch.utils
@@ -13,17 +15,46 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     b_inp = batch['input_ids'].to(device, non_blocking=True).long()
     labels = batch['labels'].long().to(device, non_blocking=True)
 
-    h, c = None, None
-    for t in range(1, labels.shape[1]):
-        logits, h, c = model(b_inp[:, t - 1], h, c)
-        loss = loss_fn(logits, labels[:, t])
+    batch_losses = torch.zeros(labels.shape[1] - 1)
+
+    if type(model) == LSTM_LM:
+        h, c = None, None
+        for t in range(1, labels.shape[1]):
+            logits, h, c = model(b_inp[:, t - 1], h, c)
+            loss = loss_fn(logits, labels[:, t])
+            if train:
+                loss.backward()
+                optimizer.step()
+            batch_losses[t] = (loss.item())
+
+    elif type(model) == Decoder:
+        mask = batch['attention_mask'].to(device, non_blocking=True)
+        for t in range(1, labels.shape[1]):
+            # Get the logits for all the tokens in the sequence, up to length t
+            logits = model(b_inp[:, :t], mask=mask[:, :t])
+            # Get only the logits for the last token in the sequence
+            logits = logits[:, -1, :]
+            # Calc loss
+            loss = loss_fn(logits, labels[:, t])
+            if train:
+                loss.backward()
+                optimizer.step()
+            batch_losses[t] = (loss.item())
     
-    if train:
-        loss.backward()
-        optimizer.step()
-    # writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', loss.item(), global_step)
-    # writer.flush()
-    return loss.item()
+    elif type(model) == S4Model:
+        mask = batch['attention_mask'].to(device, non_blocking=True)
+        # Get the logits for all the tokens in the sequence
+        logits = model(b_inp, mask=mask)
+        # Calc all loses for all tokens in the sequence
+        loss = loss_fn(logits, labels)
+        if train:
+            loss.backward()
+            optimizer.step()
+        batch_losses[t] = (loss.item())
+
+    return torch.tensor(batch_losses).mean()
+    
+    
     
 
 def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, train: bool = True, global_step: int = 0):

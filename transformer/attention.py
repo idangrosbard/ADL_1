@@ -20,28 +20,31 @@ class Attention(nn.Module):
 
     
     def forward(self, x: Tensor, cross: Optional[Tensor] = None, mask: Optional[Tensor] = None):
-        if cross is not None:
-            q = self.q(x)
-            k = self.k(cross)
-        else:
-            q = self.q(x)
-            k = self.k(x)
+        # shape of X [b, l_x, d]
+        # shape of cross [b, l_cross, d]
+        # shape of mask [b, l_x]
+        if cross is None:
+            cross = x
         
-        v = self.v(x)
+        q = self.q(x) # [b, l_x, d]
+        k = self.k(cross) # [b, l_cross, d]
+        
+        v = self.v(x) # [b, l_x, d]
 
-        logits = q @ k.transpose(-2, -1)
+        logits = q @ k.transpose(-2, -1) # [b, l_x, l_cross]
         
         if self.cross_attention:
-            mask = torch.triu(torch.ones_like(logits), diagonal=1)
-            logits[mask] = float('-inf')
+            triu_mask = torch.triu(torch.ones_like(logits), diagonal=1) # [b, l_x, l_cross]
+            logits = logits.where(triu_mask == 0, float('-inf')) # set -inf for the upper triangle
 
         if mask is not None:
-            logits[mask == 0] = float('-inf')
+            square_mask = mask.unsqueeze(-1)
+            square_mask = square_mask @ square_mask.transpose(-1, -2) # [b, l_x, l_x]
+            logits = logits.where(square_mask == 1, float('-inf')) # set -inf to the masked positions
 
-        attn = self.softmax(logits / (self.d_model ** 0.5))
+        attn = self.softmax(logits / (self.d_model ** 0.5)) # get distribution
 
-        attn_out = attn @ v
-        # print(o.shape)
+        attn_out = attn @ v # get new reps [b, l_x, d]
         return self.o(attn_out)
     
 
