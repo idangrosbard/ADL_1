@@ -25,3 +25,4 @@ class LSTMClassifier(nn.Module):
         x = self.lstm(tensor(hs_through_time)[lengths])
         
         logits = self.fc(x)
+        return logits
