@@ -120,8 +120,8 @@ class LRAARDataset(data.Dataset):
 
 def setup_lra_clf_dataloaders(batch_size: int = 2, model: str = 'decoder'):
     t0 = time.time()
-    train_ds = LRAClfDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\train'))
-    test_ds = LRAClfDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\test'))
+    train_ds = LRAClfDataset(Path('/content/drive/MyDrive/courses/ADL/aclImdb/train'))
+    test_ds = LRAClfDataset(Path('/content/drive/MyDrive/courses/ADL/aclImdb/test'))
 
     dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=False, mlm_probability=0)
 
@@ -134,8 +134,8 @@ def setup_lra_clf_dataloaders(batch_size: int = 2, model: str = 'decoder'):
 
 def setup_lra_ar_dataloaders(batch_size: int = 2, model: str = 'decoder'):
     t0 = time.time()
-    train_ds = LRAARDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\train'))
-    test_ds = LRAARDataset(Path(r'C:\Users\idg77\University\gylab\aclImdb\test'))
+    train_ds = LRAARDataset(Path('/content/drive/MyDrive/courses/ADL/aclImdb/train'))
+    test_ds = LRAARDataset(Path('/content/drive/MyDrive/courses/ADL/aclImdb/test'))
     dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=(model != 'decoder'), mlm_probability=0.15 if model != 'decoder' else 0)
 
     train_dl = data.DataLoader(train_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
