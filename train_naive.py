@@ -76,6 +76,7 @@ def get_args():
     parser = ArgumentParser()
     parser.add_argument('--model_type', type=str, choices=['transformer', 'lstm', 's4'], default='transformer')
     parser.add_argument('--pretrained_weights', type=Optional[Path], default=None)
+    parser.add_argument('--weights_output_path', type=Path, default='.')
     parser.add_argument('--logdir', type=Optional[Path], default=None)
     return parser.parse_args()
 
@@ -83,7 +84,7 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
     N_epochs = 10
-    bsize = 2
+    bsize = 64
     lr = 1e-5
     max_lr = 1e-4
     
@@ -101,5 +102,10 @@ if __name__ == '__main__':
     model = train(model, train_dl, test_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs)
     model.to(dev)
 
-    torch.save(model.state_dict(), f'{args.model_type}_clf.pth')
+    weights_output_path = Path(args.weights_output_path) / f'{args.model_type}_clf.pth'
+    weights_output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    torch.save(model.state_dict(), weights_output_path)
+
+    torch.save(model.state_dict(), )
     
