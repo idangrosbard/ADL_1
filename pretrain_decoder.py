@@ -1,16 +1,14 @@
-from lstm.lstm_lm import LSTM_LM
+from lstm import LSTM_LM
 from ssm import S4Model
-from transformer.decoder import Decoder
+from transformer import Decoder
 import torch
 from dataset import setup_dataloaders
 import torch.utils
 
-from tokenizers.processors import TemplateProcessing
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 import argparse
 from model_factory import get_model
-from typing import Optional
 from pathlib import Path
 
 def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, train: bool = True):
@@ -142,7 +140,7 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
     N_epochs = 1
-    bsize = 64
+    bsize = 256
     lr = 1e-5
     max_lr = 1e-3
     d_input = 16
