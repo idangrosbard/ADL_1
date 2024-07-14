@@ -38,6 +38,7 @@ def get_s4_llm(vocab_size, writer: SummaryWriter = None):
 
 
 def get_model(model_type: str, is_llm: bool, vocab_size: int, writer: SummaryWriter = None, n_classes: int = 3, pretrained_weights: Optional[Path] = None):
+    print('Model type', model_type)
     if model_type == 'transformer':
         llm = get_transformer_llm(vocab_size, writer)
     elif model_type == 'lstm':
@@ -52,11 +53,12 @@ def get_model(model_type: str, is_llm: bool, vocab_size: int, writer: SummaryWri
         llm.load_state_dict(state_dict)
     
     if is_llm:
+        return llm
+    else:
         if model_type == 'transformer':
             return DecoderClf(llm, llm.d_model, n_classes)
         elif model_type == 'lstm':
             return LSTMClassifier(llm, llm.d_hidden, n_classes)
         elif model_type == 's4':
             return S4Classifier(llm, llm.H, n_classes)
-    else:
-        return llm
+    

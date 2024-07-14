@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
     train_dl, eval_dl, test_dl = setup_dataloaders(bsize, args.dataset, 'decoder')
 
-    model = get_model(args.model_type, False, train_dl.dataset.tokenizer.vocab_size, writer, pretrained_weights=args.pretrained_weights)
+    model = get_model(args.model_type, True, train_dl.dataset.tokenizer.vocab_size, writer, pretrained_weights=args.pretrained_weights)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_dl), epochs=N_epochs)
