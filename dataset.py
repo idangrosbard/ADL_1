@@ -170,9 +170,9 @@ def setup_wikitext_dataloaders(batch_size: int = 2, model: str = 'decoder'):
 
     dc = DataCollatorForLanguageModeling(tokenizer=train_ds.tokenizer, mlm=(model != 'decoder'), mlm_probability=0.15 if model != 'decoder' else 0)
 
-    train_dl = data.DataLoader(train_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
-    eval_dl = data.DataLoader(eval_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
-    test_dl = data.DataLoader(test_ds, collate_fn=dc, batch_size=batch_size, shuffle=True)
+    train_dl = data.DataLoader(train_ds, collate_fn=dc, batch_size=batch_size, shuffle=True, num_workers=4)
+    eval_dl = data.DataLoader(eval_ds, collate_fn=dc, batch_size=batch_size, shuffle=True, num_workers=4)
+    test_dl = data.DataLoader(test_ds, collate_fn=dc, batch_size=batch_size, shuffle=True, num_workers=4)
     t1 = time.time()
     print(f'Dataloaders setup in {t1 - t0} seconds')
 
