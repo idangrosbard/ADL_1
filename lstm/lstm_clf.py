@@ -28,7 +28,8 @@ class LSTMClassifier(nn.Module):
         # print(len(hs_through_time))
         # print(len(hs_through_time[0].shape))
         last_hs = []
-        for b_idx, l in enumerate(lengths):
+        for b_idx in range(lengths.shape[0]):
+            l = lengths[b_idx].long()
             h_at_time_l = hs_through_time[l]
             h_of_sample_idx = h_at_time_l[b_idx]
             last_hs.append(h_of_sample_idx)
