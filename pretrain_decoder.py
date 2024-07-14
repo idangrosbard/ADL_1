@@ -140,7 +140,10 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
     N_epochs = 1
+
     bsize = 256
+    if args.model_type == 'transformer':
+        bsize = 64
     lr = 1e-5
     max_lr = 1e-3
     d_input = 16
