@@ -14,7 +14,7 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     optimizer.zero_grad()
     x = batch['input_ids'].to(device, non_blocking=True).long()
     y = batch['label'].to(device, non_blocking=True).long()
-    attn = batch['attention_mask'].to(device, non_blocking=True)
+    attn = batch['attention_mask'].to(device, non_blocking=True).float()
 
     logits = model(x, attn)
     loss = loss_fn(logits, y)
@@ -22,18 +22,16 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     if train:
         loss.backward()
         optimizer.step()
-    writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', loss.item())
-    writer.flush()
+    
     # Calculate the accuracy:
     acc = (logits.argmax(dim=1) == y).float().mean()
     
-    writer.add_scalar(f'{"train" if train else "eval"}/batch_acc', acc.item())
-    writer.flush()
+    
     
     return loss.item(), acc.item()
     
 
-def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, train: bool = True) -> Tuple[float, float]:
+def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, train: bool = True, global_steps: int = 0) -> Tuple[float, float, int]:
     if train:
         model.train()
     else:
@@ -47,27 +45,39 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
         total_loss += batch_loss  / len(dataloader)
         total_acc += batch_acc / len(dataloader)
         pbar.set_description(f'{"train" if train else "eval"}, Loss: {batch_loss}, acc: {batch_acc}')
+        
+        writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', batch_loss, global_steps)
+        writer.add_scalar(f'{"train" if train else "eval"}/batch_acc', batch_acc, global_steps)
+        writer.flush()
+        global_steps += 1
 
-    writer.add_scalar(f'{"train" if train else "eval"}/epoch_loss', total_loss)
-    writer.add_scalar(f'{"train" if train else "eval"}/epoch_acc', total_acc)
-    writer.flush()
-    return total_loss, total_acc
+    return total_loss, total_acc, global_steps
 
 
 def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, loss_fn, writer: SummaryWriter, device, epochs: int = 1, eval_every: int = 1):
+    global_steps = 0
     for e in range(epochs):
-        total_loss, total_acc = do_epoch(model, train_dataloader, optimizer, loss_fn, writer, device)
+        total_loss, total_acc, global_steps = do_epoch(model, train_dataloader, optimizer, loss_fn, writer, device, global_steps=global_steps)
         print(f'train loss: {total_loss}')
         print('train acc:', total_acc)
+        writer.add_scalar(f'{"train" if train else "eval"}/epoch_loss', total_loss, e)
+        writer.add_scalar(f'{"train" if train else "eval"}/epoch_acc', total_acc, e)
+        writer.flush()
         
         if e % eval_every == 0:
-            total_loss = do_epoch(model, eval_dataloader, optimizer, loss_fn, writer, device, train=False)
+            total_loss, total_acc, global_steps = do_epoch(model, eval_dataloader, optimizer, loss_fn, writer, device, train=False, global_steps=global_steps)
             print(f'eval loss: {total_loss}')
             print('eval acc:', total_acc)
+            writer.add_scalar(f'{"train" if train else "eval"}/epoch_loss', total_loss, e)
+            writer.add_scalar(f'{"train" if train else "eval"}/epoch_acc', total_acc, e)
+            writer.flush()
     
-    total_loss = do_epoch(model, test_dataloader, optimizer, loss_fn, writer, device, train=False)
+    total_loss, total_acc, global_steps = do_epoch(model, test_dataloader, optimizer, loss_fn, writer, device, train=False, global_steps=global_steps)
     print(f'Test loss: {total_loss}')
     print('Test acc:', total_acc)
+    writer.add_scalar(f'test/epoch_loss', total_loss, e)
+    writer.add_scalar(f'test/epoch_acc', total_acc, e)
+    writer.flush()
     return model
 
 
