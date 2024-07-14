@@ -37,7 +37,7 @@ def get_s4_llm(vocab_size, writer: SummaryWriter = None):
     return model
 
 
-def get_model(model_type: str, is_llm: bool, vocab_size: int, writer: SummaryWriter = None, n_classes: int = 3, pretrained_weights: Optional[Path] = None):
+def get_model(model_type: str, is_llm: bool, vocab_size: int, writer: SummaryWriter = None, n_classes: int = 2, pretrained_weights: Optional[Path] = None):
     print('Model type', model_type)
     if model_type == 'transformer':
         llm = get_transformer_llm(vocab_size, writer)

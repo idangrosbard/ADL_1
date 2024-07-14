@@ -73,7 +73,7 @@ class LRAClfDataset(data.Dataset):
         self.cls_map = []
         self.root_path = root_path
         for cls_folder in root_path.iterdir():
-            if cls_folder.is_dir():
+            if cls_folder.is_dir() and cls_folder.name != 'unsup':
                 self.cls_map.append(cls_folder.name)
                 for sample in cls_folder.iterdir():
                     self.samples.append((sample, cls_folder.name))
