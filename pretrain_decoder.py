@@ -9,7 +9,7 @@ from tokenizers.processors import TemplateProcessing
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 import argparse
-
+from model_factory import get_model
 
 def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, train: bool = True):
     optimizer.zero_grad()
@@ -32,36 +32,56 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
             batch_losses[t] = loss.item()
 
     elif type(model) == Decoder:
-        
-        for t in range(1, b_inp.shape[1]):
-            # Get the logits for all the tokens in the sequence, up to length t (exclusive)
-            logits = model(b_inp[:, :t], None, mask=mask[:, :t])
-            
-            # Get only the logits for the last token in the input sequence
-            logits = logits[:, -1, :]
+        if False:
+            for t in range(1, b_inp.shape[1]):
+                # Get the logits for all the tokens in the sequence, up to length t (exclusive)
+                logits = model(b_inp[:, :t], None, mask=mask[:, :t])
+                
+                # Get only the logits for the last token in the input sequence
+                logits = logits[:, -1, :]
 
+                # Calc loss, based on 0:t (exclusive) tokens, predict the t token
+                loss = loss_fn(logits, b_inp[:, t])
+                # assert not nan
+                assert loss != torch.nan
+                if train:
+                    loss.backward()
+                    optimizer.step()
+                print(loss.item())
+                batch_losses[t] = (loss.item())
+        else:
+            # Get the logits for all the tokens in the sequence, up to length t (exclusive)
+            T = b_inp.shape[1]
+            logits = model(b_inp[:, :T], None, mask=mask[:, 1:])
+            logits = logits.reshape(-1, logits.shape[-1])
+            target = b_inp[:, 1:].reshape(-1)
             # Calc loss, based on 0:t (exclusive) tokens, predict the t token
-            loss = loss_fn(logits, b_inp[:, t])
+            loss = loss_fn(logits, target)
             # assert not nan
             assert loss != torch.nan
             if train:
                 loss.backward()
                 optimizer.step()
-            print(loss.item())
-            batch_losses[t] = (loss.item())
+            return loss.item()
     
     elif type(model) == S4Model:
         mask = batch['attention_mask'].to(device, non_blocking=True)
         # Get the logits for all the tokens in the sequence
-        logits = model(b_inp, mask=mask)
+        logits = model(b_inp)
         # Calc all loses for all tokens in the sequence
         # Based on 0:t tokens, predict the t+1 token
-        loss = loss_fn(logits[:-1], b_inp[1:])
+        
+        logits = logits[:, :-1]
+        target = b_inp[:, 1:]
+        logits = logits.reshape(-1, logits.shape[-1])
+        loss = loss_fn(logits, target.reshape(-1))
         if train:
             loss.backward()
             optimizer.step()
-        batch_losses[t] = (loss.item())
-
+        if torch.isnan(loss):
+            raise ValueError('Loss is nan')
+        return loss.item()
+    
     return torch.tensor(batch_losses).mean()
     
     
@@ -104,39 +124,11 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
     return model
 
 
-def get_transformer_llm(vocab_size, writer: SummaryWriter = None):
-    model_d = 512
-    n_heads = 8
-    attn_d = model_d // n_heads
-    ff_d = 2048
-    n_layers = 6
-    writer.add_hparams({'model_d': model_d, 'attn_d': attn_d, 'n_heads': n_heads, 'ff_d': ff_d, 'n_layers': n_layers}, {})
-    # return torch.nn.Transformer(d_model=model_d, nhead=n_heads, num_encoder_layers=0, num_decoder_layers=n_layers, dim_feedforward=ff_d, dropout=0.1)
-    model = Decoder(vocab_size + 2, model_d, attn_d, ff_d, n_heads, n_layers, vocab_size + 2, decoder_only=True, return_logits=True)
-    return model
-
-
-def get_lstm_llm(vocab_size, writer: SummaryWriter = None):
-    d_input = 256
-    hidden_d = 256
-    n_layers = 6
-    writer.add_hparams({'d_input': d_input, 'hidden_d': hidden_d, 'n_layers': n_layers}, {})
-    model = LSTM_LM(vocab_size + 2, hidden_d, n_layers)
-    return model
-
-
-def get_s4_llm(vocab_size, writer: SummaryWriter = None):
-    H = 256
-    N = 16
-    n_layers = 6
-    writer.add_hparams({'H': H, 'N': N, 'n_layers': n_layers}, {})
-    model = S4Model(H, N, vocab_size + 2, vocab_size + 2, n_layers)
-    return model
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_type', type=str, choices=['transformer', 'lstm', 's4'], default='lstm')
+    parser.add_argument('--model_type', type=str, choices=['transformer', 'lstm', 's4'], default='transformer')
     return parser.parse_args()
 
 
@@ -153,20 +145,13 @@ if __name__ == '__main__':
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     writer = SummaryWriter()
 
-    train_dl, eval_dl, test_dl = setup_dataloaders(bsize, 'wikitext', 'lstm')
-    # model = LSTM_LM(train_dl.dataset.tokenizer.vocab_size + 2, hidden_d, n_layers)
-    if args.model_type == 'transformer':
-        model = get_transformer_llm(train_dl.dataset.tokenizer.vocab_size, writer)
-    elif args.model_type == 'lstm':
-        model = get_lstm_llm(train_dl.dataset.tokenizer.vocab_size, writer)
-    elif args.model_type == 's4':
-        model = get_s4_llm(train_dl.dataset.tokenizer.vocab_size, writer)
-    else:
-        raise ValueError('Model type not supported')
+    train_dl, eval_dl, test_dl = setup_dataloaders(bsize, 'wikitext', 'decoder')
+
+    model = get_model(args.model_type, False, train_dl.dataset.tokenizer.vocab_size, writer)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_dl), epochs=N_epochs)
-    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=train_dl.dataset.tokenizer.vocab_size+1) # ignore the padding index
+    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=28439) # ignore the padding index
     
     writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr, 'd_input': d_input, 'hidden_d': hidden_d, 'n_layers': n_layers}, {})
     

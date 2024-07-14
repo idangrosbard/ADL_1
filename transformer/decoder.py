@@ -51,20 +51,24 @@ class DecoderBlock(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, corpus_size: int, d_model: int, d_attn: int, d_ff: int, n_heads: int, n_layers: int, output_dim: int, decoder_only: bool = True, return_logits: bool = True, max_l: int = 10000) -> None:
         super().__init__()
+        print(corpus_size)
         self.return_logits = return_logits
-        self.embed = nn.Embedding(corpus_size, d_model, padding_idx=28440, max_norm=1.0)
+        self.embed = nn.Embedding(corpus_size, d_model, padding_idx=28439)
         self.pe = PositionalEncoding(d_model, max_l)
+        self.d_model = d_model
 
         self.layers = nn.ModuleList([DecoderBlock(d_model, d_attn, n_heads, d_ff, decoder_only=decoder_only) for _ in range(n_layers)])
-        self.normalizers = nn.ModuleList([nn.LayerNorm(d_model) for _ in range(n_layers)])
+        # self.normalizers = nn.ModuleList([nn.LayerNorm(d_model) for _ in range(n_layers)])
         self.o = nn.Linear(d_model, output_dim)
 
     def forward(self, x: Tensor, cross: Optional[Tensor], mask: Tensor):
         x = self.embed(x)
+        
         x = self.pe(x)
-        for layer, norm in zip(self.layers, self.normalizers):
-            x = norm(layer(x, cross, mask) + x)
+        for layer in self.layers:
+            x = layer(x, cross, mask)
 
+        
         if self.return_logits:
             return self.o(x)
         return x

@@ -1,4 +1,5 @@
-from torch import nn, Tensor, tensor
+
+from torch import nn, Tensor, stack
 from typing import Tuple, List
 from .lstm_lm import LSTM_LM
 
@@ -8,6 +9,7 @@ class LSTMClassifier(nn.Module):
         super(LSTMClassifier, self).__init__()
 
         self.lstm = lstm_lm
+        self.lstm.return_logits = False
         self.fc = nn.Linear(d_hidden, n_classes)
     
     def forward(self, x: Tensor, attn: Tensor) -> Tensor:
@@ -16,13 +18,22 @@ class LSTMClassifier(nn.Module):
         hs_through_time = []
         # Iterate over the sequence, get the last hidden state of the last input token
         for t in range(x.shape[1]):
-            _, hs, cs = self.lstm(x[:,t], hs, cs)
+            h, hs, cs = self.lstm(x[:,t], hs, cs)
             # store h history per token, to get the last hidden state per each sample (supporting different lengths)
-            hs_through_time.append(hs[-1])
+            hs_through_time.append(h)
 
         # Get the last hidden state of the last input token
-        lengths = attn.sum(dim=1)
-        x = self.lstm(tensor(hs_through_time)[lengths])
+        lengths = attn.sum(dim=1) - 1
+        # print(attn.shape, l, l.shape)
+        # print(len(hs_through_time))
+        # print(len(hs_through_time[0].shape))
+        last_hs = []
+        for b_idx, l in enumerate(lengths):
+            h_at_time_l = hs_through_time[l]
+            h_of_sample_idx = h_at_time_l[b_idx]
+            last_hs.append(h_of_sample_idx)
         
-        logits = self.fc(x)
+        last_hs = stack(last_hs).to(self.fc.weight.device)
+        
+        logits = self.fc(last_hs)
         return logits

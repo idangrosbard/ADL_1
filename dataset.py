@@ -12,9 +12,12 @@ def setup_tokenizer(use_default: bool = True):
     finetuned_tokenizer_path = Path('/content/ADL_1/wikitext-103-tokenizer-finetuned-lra')
     if use_default:
         new_tokenizer = GPT2TokenizerFast.from_pretrained("Kristijan/wikitext-103-tokenizer")
-        new_tokenizer.add_special_tokens({"mask_token": "<MASK>"})
+        print('init vocab size', new_tokenizer.vocab_size)
+        # new_tokenizer.add_special_tokens({"mask_token": "<MASK>"})
         new_tokenizer.add_special_tokens({'pad_token': '<PAD>'})
         new_tokenizer.add_special_tokens({'eos_token': '<EOS>'})
+        print('vocab size with special', new_tokenizer.vocab_size)
+        print(new_tokenizer.vocab_size)
     else:
         if finetuned_tokenizer_path.exists():
             print('Found tokenizer')
@@ -40,8 +43,8 @@ def setup_tokenizer(use_default: bool = True):
 
     encoded_input = new_tokenizer('<PAD>', truncation=True, padding=False, return_tensors="pt")
     print(f"PAD: {encoded_input}")
-    encoded_input = new_tokenizer('<MASK>', truncation=True, padding=False, return_tensors="pt")
-    print(f"MASK: {encoded_input}")
+    # encoded_input = new_tokenizer('<MASK>', truncation=True, padding=False, return_tensors="pt")
+    # print(f"MASK: {encoded_input}")
     encoded_input = new_tokenizer('<EOS>', truncation=True, padding=False, return_tensors="pt")
     print(f"EOS: {encoded_input}")
     
@@ -176,7 +179,7 @@ def setup_wikitext_dataloaders(batch_size: int = 2, model: str = 'decoder'):
     return train_dl, eval_dl, test_dl
 
 
-def setup_dataloaders(batch_size: int = 2, dataset: str = 'wikitext', model: str = 'lstm'):
+def setup_dataloaders(batch_size: int = 2, dataset: str = 'wikitext', model: str = 'decoder'):
     if dataset == 'wikitext':
         return setup_wikitext_dataloaders(batch_size, model)
     elif dataset == 'lra_clf':

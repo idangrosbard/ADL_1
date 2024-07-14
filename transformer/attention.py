@@ -38,7 +38,9 @@ class Attention(nn.Module):
         if mask is not None:
             square_mask = mask.unsqueeze(-1)
             square_mask = square_mask @ square_mask.transpose(-1, -2) # [b, l_x, l_x]
-            logits = logits.where(square_mask == 1, float('-inf')) # set -inf to the masked positions
+            # Add main diagonal to the mask (to support padding tokens)
+            square_mask = square_mask + torch.eye(mask.shape[1], device=mask.device).unsqueeze(0)
+            logits = logits.where(square_mask > 0, float('-inf')) # set -inf to the masked positions
 
         attn = self.softmax(logits / (self.d_attn ** 0.5)) # get distribution
 
