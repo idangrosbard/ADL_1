@@ -9,29 +9,29 @@ from pathlib import Path
 
 
 def get_transformer_llm(vocab_size, writer: SummaryWriter = None):
-    model_d = 512
-    n_heads = 8
+    model_d = 128
+    n_heads = 4
     attn_d = model_d // n_heads
-    ff_d = 2048
-    n_layers = 4
+    ff_d = 512
+    n_layers = 2
     writer.add_hparams({'model_d': model_d, 'attn_d': attn_d, 'n_heads': n_heads, 'ff_d': ff_d, 'n_layers': n_layers}, {})
     model = Decoder(vocab_size + 2, model_d, attn_d, ff_d, n_heads, n_layers, vocab_size + 2, decoder_only=True, return_logits=True)
     return model
 
 
 def get_lstm_llm(vocab_size, writer: SummaryWriter = None):
-    d_input = 256
-    hidden_d = 256
-    n_layers = 4
+    d_input = 128
+    hidden_d = 128
+    n_layers = 2
     writer.add_hparams({'d_input': d_input, 'hidden_d': hidden_d, 'n_layers': n_layers}, {})
     model = LSTM_LM(vocab_size + 2, hidden_d, n_layers)
     return model
 
 
 def get_s4_llm(vocab_size, writer: SummaryWriter = None):
-    H = 256
-    N = 16
-    n_layers = 4
+    H = 128
+    N = 4
+    n_layers = 2
     writer.add_hparams({'H': H, 'N': N, 'n_layers': n_layers}, {})
     model = S4Model(H, N, vocab_size + 2, vocab_size + 2, n_layers)
     return model

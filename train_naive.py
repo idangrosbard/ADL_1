@@ -15,7 +15,6 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     x = batch['input_ids'].to(device, non_blocking=True).long()
     y = batch['label'].to(device, non_blocking=True).long()
     attn = batch['attention_mask'].to(device, non_blocking=True)
-    model.to(device)
 
     logits = model(x, attn)
     loss = loss_fn(logits, y)
@@ -101,13 +100,14 @@ if __name__ == '__main__':
     loss_fn = torch.nn.CrossEntropyLoss()
     writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr}, {})
     
-    model = train(model, train_dl, test_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs)
     model.to(dev)
+    loss_fn.to(dev)
+    model = train(model, train_dl, test_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs)
+    
 
     weights_output_path = Path(args.weights_output_path) / f'{args.model_type}_clf.pth'
     weights_output_path.parent.mkdir(parents=True, exist_ok=True)
 
     torch.save(model.state_dict(), weights_output_path)
-
-    torch.save(model.state_dict(), )
     
+
