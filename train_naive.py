@@ -87,9 +87,10 @@ if __name__ == '__main__':
     N_epochs = 10
     bsize = 64
     lr = 1e-5
-    max_lr = 1e-4
+    max_lr = 1e-3
     
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(dev)
     writer = SummaryWriter(log_dir=args.logdir)
 
     train_dl, test_dl = setup_dataloaders(bsize, 'lra_clf')
