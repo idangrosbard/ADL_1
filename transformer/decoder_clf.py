@@ -14,6 +14,7 @@ class DecoderClf(nn.Module):
         # get the last token per sample in batch
         last_token_idx = (attention_mask.sum(dim=1) - 1).long()
         x = x.gather(1, last_token_idx.unsqueeze(1).unsqueeze(2).expand(-1, -1, x.size(2))).squeeze(1)
+        del last_token_idx
         return self.fc(x)
     
 

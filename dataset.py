@@ -11,11 +11,12 @@ DEBUG = False
 def setup_tokenizer(use_default: bool = True):
     finetuned_tokenizer_path = Path('/content/ADL_1/wikitext-103-tokenizer-finetuned-lra')
     if use_default:
-        new_tokenizer = GPT2TokenizerFast.from_pretrained("Kristijan/wikitext-103-tokenizer")
+        new_tokenizer = GPT2TokenizerFast.from_pretrained("Kristijan/wikitext-103-tokenizer", model_max_length=4096)
         print('init vocab size', new_tokenizer.vocab_size)
         # new_tokenizer.add_special_tokens({"mask_token": "<MASK>"})
         new_tokenizer.add_special_tokens({'pad_token': '<PAD>'})
         new_tokenizer.add_special_tokens({'eos_token': '<EOS>'})
+        
         print('vocab size with special', new_tokenizer.vocab_size)
         print(new_tokenizer.vocab_size)
     else:
