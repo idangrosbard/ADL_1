@@ -67,7 +67,6 @@ class Decoder(nn.Module):
         x = self.pe(x)
         for layer in self.layers:
             x = layer(x, cross, mask)
-
         
         if self.return_logits:
             return self.o(x)

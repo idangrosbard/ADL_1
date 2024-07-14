@@ -13,7 +13,7 @@ class S4Classifier(nn.Module):
     def forward(self, x: Tensor, attn: Tensor) -> Tensor:
         x = self.s4(x)
         # Get the last hidden state of the last input token
-        L = attn.sum(dim=1) - 1
+        L = (attn.sum(dim=1) - 1).long()
         last_x = x.gather(1, L.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, x.size(2))).squeeze(1)
         y = self.fc(last_x)
         return y.squeeze(1)

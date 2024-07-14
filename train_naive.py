@@ -25,9 +25,6 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     
     # Calculate the accuracy:
     acc = (logits.argmax(dim=1) == y).float().mean()
-    
-    
-    
     return loss.item(), acc.item()
     
 

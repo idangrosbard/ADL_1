@@ -34,6 +34,7 @@ class Attention(nn.Module):
         if self.cross_attention:
             triu_mask = torch.triu(torch.ones_like(logits), diagonal=1) # [b, l_x, l_cross]
             logits = logits.where(triu_mask == 0, float('-inf')) # set -inf for the upper triangle
+            del triu_mask
 
         if mask is not None:
             square_mask = mask.unsqueeze(-1)
@@ -41,10 +42,13 @@ class Attention(nn.Module):
             # Add main diagonal to the mask (to support padding tokens)
             square_mask = square_mask + torch.eye(mask.shape[1], device=mask.device).unsqueeze(0)
             logits = logits.where(square_mask > 0, float('-inf')) # set -inf to the masked positions
+            del square_mask
 
         attn = self.softmax(logits / (self.d_attn ** 0.5)) # get distribution
+        del logits
 
         attn_out = attn @ v # get new reps [b, l_x, d]
+        del attn
         assert attn_out.shape == x.shape
         return attn_out
     
