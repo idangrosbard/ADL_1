@@ -54,6 +54,7 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
 def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, loss_fn, writer: SummaryWriter, device, epochs: int = 1, eval_every: int = 1):
     global_steps = 0
     for e in range(epochs):
+        model.train()
         total_loss, total_acc, global_steps = do_epoch(model, train_dataloader, optimizer, loss_fn, writer, device, global_steps=global_steps)
         print(f'train loss: {total_loss}')
         print('train acc:', total_acc)
@@ -61,20 +62,25 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
         writer.add_scalar(f'{"train" if train else "eval"}/epoch_acc', total_acc, e)
         writer.flush()
         
+        
         if e % eval_every == 0:
-            total_loss, total_acc, global_steps = do_epoch(model, eval_dataloader, optimizer, loss_fn, writer, device, train=False, global_steps=global_steps)
-            print(f'eval loss: {total_loss}')
-            print('eval acc:', total_acc)
-            writer.add_scalar(f'{"train" if train else "eval"}/epoch_loss', total_loss, e)
-            writer.add_scalar(f'{"train" if train else "eval"}/epoch_acc', total_acc, e)
-            writer.flush()
-    
-    total_loss, total_acc, global_steps = do_epoch(model, test_dataloader, optimizer, loss_fn, writer, device, train=False, global_steps=global_steps)
-    print(f'Test loss: {total_loss}')
-    print('Test acc:', total_acc)
-    writer.add_scalar(f'test/epoch_loss', total_loss, e)
-    writer.add_scalar(f'test/epoch_acc', total_acc, e)
-    writer.flush()
+            with torch.no_grad():
+                model.eval()
+                total_loss, total_acc, global_steps = do_epoch(model, eval_dataloader, optimizer, loss_fn, writer, device, train=False, global_steps=global_steps)
+                print(f'eval loss: {total_loss}')
+                print('eval acc:', total_acc)
+                writer.add_scalar(f'{"train" if train else "eval"}/epoch_loss', total_loss, e)
+                writer.add_scalar(f'{"train" if train else "eval"}/epoch_acc', total_acc, e)
+                writer.flush()
+
+    with torch.no_grad():
+        model.eval()
+        total_loss, total_acc, global_steps = do_epoch(model, test_dataloader, optimizer, loss_fn, writer, device, train=False, global_steps=global_steps)
+        print(f'Test loss: {total_loss}')
+        print('Test acc:', total_acc)
+        writer.add_scalar(f'test/epoch_loss', total_loss, e)
+        writer.add_scalar(f'test/epoch_acc', total_acc, e)
+        writer.flush()
     return model
 
 
