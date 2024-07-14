@@ -1,7 +1,12 @@
+import torch
 from torch.utils.tensorboard import SummaryWriter
 from lstm import LSTM_LM, LSTMClassifier
 from transformer import Decoder, DecoderClf
 from ssm import S4Model, S4Classifier
+from typing import Optional
+from pathlib import Path
+
+
 
 def get_transformer_llm(vocab_size, writer: SummaryWriter = None):
     model_d = 512
@@ -32,7 +37,7 @@ def get_s4_llm(vocab_size, writer: SummaryWriter = None):
     return model
 
 
-def get_model(model_type: str, is_llm: bool, vocab_size: int, writer: SummaryWriter = None, n_classes: int = 3):
+def get_model(model_type: str, is_llm: bool, vocab_size: int, writer: SummaryWriter = None, n_classes: int = 3, pretrained_weights: Optional[Path] = None):
     if model_type == 'transformer':
         llm = get_transformer_llm(vocab_size, writer)
     elif model_type == 'lstm':
@@ -41,6 +46,10 @@ def get_model(model_type: str, is_llm: bool, vocab_size: int, writer: SummaryWri
         llm = get_s4_llm(vocab_size, writer)
     else:
         raise ValueError(f'Unknown model type: {model_type}')
+    
+    if pretrained_weights is not None:
+        state_dict = torch.load(pretrained_weights, map_location = torch.device('cpu'))
+        llm.load_state_dict(state_dict)
     
     if is_llm:
         if model_type == 'transformer':

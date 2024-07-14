@@ -5,7 +5,8 @@ from torch.utils.tensorboard import SummaryWriter
 from dataset import setup_dataloaders
 from model_factory import get_model
 from argparse import ArgumentParser
-from typing import Tuple
+from typing import Tuple, Optional
+from pathlib import Path
 
 
 
@@ -74,6 +75,8 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
 def get_args():
     parser = ArgumentParser()
     parser.add_argument('--model_type', type=str, choices=['transformer', 'lstm', 's4'], default='transformer')
+    parser.add_argument('--pretrained_weights', type=Optional[Path], default=None)
+    parser.add_argument('--logdir', type=Optional[Path], default=None)
     return parser.parse_args()
 
 
@@ -85,10 +88,10 @@ if __name__ == '__main__':
     max_lr = 1e-4
     
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    writer=SummaryWriter()
+    writer = SummaryWriter(log_dir=args.logdir)
 
     train_dl, test_dl = setup_dataloaders(bsize, 'lra_clf')
-    model = get_model(args.model_type, True, train_dl.dataset.tokenizer.vocab_size, writer, 3)
+    model = get_model(args.model_type, True, train_dl.dataset.tokenizer.vocab_size, writer, 3, pretrained_weights=args.pretrained_weights)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_dl), epochs=N_epochs)
