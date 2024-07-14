@@ -157,7 +157,7 @@ if __name__ == '__main__':
     n_layers = 3
     
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    writer = SummaryWriter(log_dir=args.logdir)
+    writer = SummaryWriter(log_dir=args.logdir / 'runs' / f'{args.model_type}_{args.dataset}')
 
     train_dl, eval_dl, test_dl = setup_dataloaders(bsize, args.dataset, 'decoder')
 
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=len(train_dl), epochs=N_epochs)
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=28439) # ignore the padding index
     
-    writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr, 'd_input': d_input, 'hidden_d': hidden_d, 'n_layers': n_layers}, {})
+    writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr, 'd_input': d_input, 'hidden_d': hidden_d, 'n_layers': n_layers, 'model_type': args.model_type, 'dataset': args.dataset}, {})
     
     model.to(dev)
     model = train(model, train_dl, eval_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs)
