@@ -165,7 +165,7 @@ if __name__ == '__main__':
     model.to(dev)
     model = train(model, train_dl, eval_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs)
 
-    weights_output_path = Path(args.weights_output_path) / f'{args.model_type}_lm.pth'
+    weights_output_path = Path(args.weights_output_path) / f'{args.model_type}_{args.dataset}_lm.pth'
     weights_output_path.parent.mkdir(parents=True, exist_ok=True)
 
     torch.save(model.state_dict(), weights_output_path)
