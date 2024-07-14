@@ -99,7 +99,7 @@ if __name__ == '__main__':
     N_epochs = 10
     bsize = 256
     if args.model_type == 'transformer':
-        bsize = 64
+        bsize = 32
     lr = 1e-5
     max_lr = 1e-3
     
