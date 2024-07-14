@@ -15,6 +15,7 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     x = batch['input_ids'].to(device, non_blocking=True).long()
     y = batch['label'].to(device, non_blocking=True).long()
     attn = batch['attention_mask'].to(device, non_blocking=True)
+    model.to(device)
 
     logits = model(x, attn)
     loss = loss_fn(logits, y)
@@ -75,9 +76,9 @@ def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, 
 def get_args():
     parser = ArgumentParser()
     parser.add_argument('--model_type', type=str, choices=['transformer', 'lstm', 's4'], default='transformer')
-    parser.add_argument('--pretrained_weights', type=Optional[Path], default=None)
+    parser.add_argument('--pretrained_weights', type=Path, default=None)
     parser.add_argument('--weights_output_path', type=Path, default='.')
-    parser.add_argument('--logdir', type=Optional[Path], default=None)
+    parser.add_argument('--logdir', type=Path, default=None)
     return parser.parse_args()
 
 

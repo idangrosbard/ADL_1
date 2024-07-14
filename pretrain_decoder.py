@@ -132,9 +132,9 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_type', type=str, choices=['transformer', 'lstm', 's4'], default='transformer')
     parser.add_argument('--dataset', type=str, choices=['lra', 'wikitext'], default='wikitext')
-    parser.add_argument('--pretrained_weights', type=Optional[Path], default=None)
+    parser.add_argument('--pretrained_weights', type=Path, default=None)
     parser.add_argument('--weights_output_path', type=Path, default='.')
-    parser.add_argument('--logdir', type=Optional[Path], default=None)
+    parser.add_argument('--logdir', type=Path, default=None)
 
     return parser.parse_args()
 
