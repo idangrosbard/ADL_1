@@ -35,6 +35,8 @@ class LSTMClassifier(nn.Module):
             last_hs.append(h_of_sample_idx)
         
         last_hs = stack(last_hs).to(self.fc.weight.device)
-        
+        del hs_through_time
+
         logits = self.fc(last_hs)
+        del last_hs
         return logits
