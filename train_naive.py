@@ -15,7 +15,6 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     x = batch['input_ids'].to(device, non_blocking=True).long()
     y = batch['label'].to(device, non_blocking=True).long()
     attn = batch['attention_mask'].to(device, non_blocking=True).float()
-    print(attn.shape)
 
     logits = model(x, attn)
     loss = loss_fn(logits, y)
