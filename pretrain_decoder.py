@@ -103,11 +103,11 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
     return total_loss, global_step
 
 
-def train(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, loss_fn, writer: SummaryWriter, device, epochs: int = 1, eval_every: int = 1):
+def train_model(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, loss_fn, writer: SummaryWriter, device, epochs: int = 1, eval_every: int = 1):
     global_step = 0
     for e in range(epochs):
         model.train()
-        total_loss, global_step = do_epoch(model, train_dataloader, optimizer, loss_fn, writer, device, global_step=global_step)
+        total_loss, global_step = do_epoch(model, train_dataloader, optimizer, loss_fn, writer, device, train=True, global_step=global_step)
         print(f'train loss: {total_loss}')
         writer.add_scalar(f'train/epoch_loss', total_loss, e)
         writer.flush()
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     writer.add_hparams({'batch_size': bsize, 'lr': lr, 'max_lr': max_lr, 'd_input': d_input, 'hidden_d': hidden_d, 'n_layers': n_layers, 'model_type': args.model_type, 'dataset': args.dataset}, {})
     
     model.to(dev)
-    model = train(model, train_dl, eval_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs)
+    model = train_model(model, train_dl, eval_dl, test_dl, optimizer, loss_fn, writer, dev, epochs=N_epochs)
 
     weights_output_path = Path(args.weights_output_path) / f'{args.model_type}_{args.dataset}_lm.pth'
     weights_output_path.parent.mkdir(parents=True, exist_ok=True)
