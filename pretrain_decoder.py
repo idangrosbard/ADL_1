@@ -17,6 +17,7 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     mask = batch['attention_mask'].to(device, non_blocking=True)
 
     batch_losses = torch.zeros(b_inp.shape[1] - 1)
+    accs = torch.zeros(b_inp.shape[1] - 1)
 
     if type(model) == LSTM_LM:
         for t in range(1, b_inp.shape[1]):
@@ -24,12 +25,14 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
             for t_tag in range(0, t):
                 logits, h, c = model(b_inp[:, t_tag], h, c)
             loss = loss_fn(logits, b_inp[:, t])
+            acc = (logits.argmax(dim=1) == b_inp[:, t]).float().mean()
 
             if train:
                 loss.backward()
                 optimizer.step()
             print(loss.item())
             batch_losses[t] = loss.item()
+            accs[t] = acc.item()
 
     elif type(model) == Decoder:
         if False:
@@ -62,7 +65,8 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
             if train:
                 loss.backward()
                 optimizer.step()
-            return loss.item()
+            acc = (logits.argmax(dim=1) == target).float().mean()
+            return loss.item(), acc.item()
     
     elif type(model) == S4Model:
         mask = batch['attention_mask'].to(device, non_blocking=True)
@@ -80,9 +84,10 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
             optimizer.step()
         if torch.isnan(loss):
             raise ValueError('Loss is nan')
-        return loss.item()
+        acc = (logits.argmax(dim=1) == target.reshape(-1)).float().mean()
+        return loss.item(), acc.item()
     
-    return torch.tensor(batch_losses).mean()
+    return torch.tensor(batch_losses).mean(), torch.tensor(accs).mean()
     
     
 def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, train: bool = True, global_step: int = 0):
@@ -92,42 +97,49 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
         model.eval()
 
     total_loss = 0
+    total_acc = 0
     pbar = tqdm(dataloader, desc='train' if train else 'eval')
     for batch in pbar:
-        b_loss = do_batch(model, batch, optimizer, loss, writer, device, train)
+        b_loss, b_acc = do_batch(model, batch, optimizer, loss, writer, device, train)
         total_loss += b_loss / len(dataloader)
-        pbar.set_description(f'{"train" if train else "eval"}, Loss: {b_loss}')
+        total_acc += b_acc / len(dataloader)
+        pbar.set_description(f'{"train" if train else "eval"}, Loss: {b_loss}, Acc: {b_acc}')
         writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', b_loss, global_step)
+        writer.add_scalar(f'{"train" if train else "eval"}/batch_acc', b_acc, global_step)
         writer.flush()
         global_step += 1
-    return total_loss, global_step
+    return total_loss, total_acc, global_step
 
 
 def train_model(model, train_dataloader, eval_dataloader, test_dataloader, optimizer, loss_fn, writer: SummaryWriter, device, epochs: int = 1, eval_every: int = 1):
     global_step = 0
     for e in range(epochs):
         model.train()
-        total_loss, global_step = do_epoch(model, train_dataloader, optimizer, loss_fn, writer, device, train=True, global_step=global_step)
-        print(f'train loss: {total_loss}')
+        total_loss, total_acc, global_step = do_epoch(model, train_dataloader, optimizer, loss_fn, writer, device, train=True, global_step=global_step)
+        print(f'train loss: {total_loss}, acc: {total_acc}')
         writer.add_scalar(f'train/epoch_loss', total_loss, e)
+        writer.add_scalar(f'train/epoch_acc', total_acc, e)
         writer.flush()
         
         
         if e % eval_every == 0:
             with torch.no_grad():
                 model.eval()
-                total_loss, global_step = do_epoch(model, eval_dataloader, optimizer, loss_fn, writer, device, train=False, global_step=global_step)
-                print(f'eval loss: {total_loss}')
+                total_loss, total_acc, global_step = do_epoch(model, eval_dataloader, optimizer, loss_fn, writer, device, train=False, global_step=global_step)
+                print(f'eval acc: {total_acc}')
                 writer.add_scalar(f'eval/epoch_loss', total_loss, e)
+                writer.add_scalar(f'eval/epoch_acc', total_acc, e)
                 writer.flush()
     
     with torch.no_grad():
         model.eval()
-        total_loss, global_step = do_epoch(model, test_dataloader, optimizer, loss_fn, writer, device, train=False, global_step=global_step)
-        print(f'Test loss: {total_loss}')
+        total_loss, total_acc, global_step = do_epoch(model, test_dataloader, optimizer, loss_fn, writer, device, train=False, global_step=global_step)
+        print(f'Test loss: {total_loss}, acc: {total_acc}')
         writer.add_scalar(f'test/epoch_loss', total_loss, e)
+        writer.add_scalar(f'test/epoch_acc', total_acc, e)
         writer.flush()
         return model
+        
 
 
 
@@ -147,9 +159,9 @@ if __name__ == '__main__':
     args = get_args()
     N_epochs = 2
 
-    bsize = 256
+    bsize = 16
     if args.model_type == 'transformer':
-        bsize = 8
+        bsize = 2
     lr = 1e-5
     max_lr = 1e-3
     d_input = 16
