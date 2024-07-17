@@ -20,7 +20,10 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     accs = torch.zeros(b_inp.shape[1] - 1)
 
     if type(model) == LSTM_LM:
-        for t in range(1, b_inp.shape[1]):
+        # randomly sample some subset of target tokens
+        subset = 10
+        subset_ts = torch.randint(1, b_inp.shape[1], subset)
+        for t in subset_ts:
             h, c = None, None
             for t_tag in range(0, t):
                 logits, h, c = model(b_inp[:, t_tag], h, c)
