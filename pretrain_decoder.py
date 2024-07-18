@@ -16,14 +16,18 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     b_inp = batch['input_ids'].to(device, non_blocking=True).long()
     mask = batch['attention_mask'].to(device, non_blocking=True)
 
+    
     batch_losses = torch.zeros(b_inp.shape[1] - 1)
     accs = torch.zeros(b_inp.shape[1] - 1)
 
     if type(model) == LSTM_LM:
         # randomly sample some subset of target tokens
         subset = 10
+        batch_losses = torch.zeros(subset)
+        accs = torch.zeros(subset)
         subset_ts = torch.randint(1, b_inp.shape[1], subset)
-        for t in subset_ts:
+        for i in range(subset):
+            t = subset_ts[i]
             h, c = None, None
             for t_tag in range(0, t):
                 logits, h, c = model(b_inp[:, t_tag], h, c)
@@ -34,8 +38,8 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
                 loss.backward()
                 optimizer.step()
             print(loss.item())
-            batch_losses[t] = loss.item()
-            accs[t] = acc.item()
+            batch_losses[i] = loss.item()
+            accs[i] = acc.item()
 
     elif type(model) == Decoder:
         if False:
