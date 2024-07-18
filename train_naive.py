@@ -106,7 +106,9 @@ if __name__ == '__main__':
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(dev)
     # writer = SummaryWriter(log_dir=args.logdir)
-    writer = SummaryWriter(log_dir=args.logdir / 'runs' / f'{args.model_type}')
+    # print(current date time)
+    import datetime
+    writer = SummaryWriter(log_dir=args.logdir / 'runs' / f'{args.model_type}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}')
 
     train_dl, test_dl = setup_dataloaders(bsize, 'lra_clf')
     model = get_model(args.model_type, False, train_dl.dataset.tokenizer.vocab_size, writer, 2, pretrained_weights=args.pretrained_weights)

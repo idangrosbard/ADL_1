@@ -176,7 +176,8 @@ if __name__ == '__main__':
     n_layers = 3
     
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    writer = SummaryWriter(log_dir=args.logdir / 'runs' / f'{args.model_type}_{args.dataset}')
+    import datetime
+    writer = SummaryWriter(log_dir=args.logdir / 'runs' / f'{args.model_type}_{args.dataset}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}')
 
     train_dl, eval_dl, test_dl = setup_dataloaders(bsize, args.dataset, 'decoder')
 
