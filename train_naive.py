@@ -108,7 +108,8 @@ if __name__ == '__main__':
     # writer = SummaryWriter(log_dir=args.logdir)
     # print(current date time)
     import datetime
-    writer = SummaryWriter(log_dir=args.logdir / 'runs' / f'{args.model_type}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}')
+    weights_name = args.pretrained_weights.name if args.pretrained_weights else 'random'
+    writer = SummaryWriter(log_dir=args.logdir / 'runs' / f'{args.model_type}_pretrained_{weights_name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}')
 
     train_dl, test_dl = setup_dataloaders(bsize, 'lra_clf')
     model = get_model(args.model_type, False, train_dl.dataset.tokenizer.vocab_size, writer, 2, pretrained_weights=args.pretrained_weights)
