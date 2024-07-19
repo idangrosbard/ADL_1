@@ -25,7 +25,7 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
         subset = 10
         batch_losses = torch.zeros(subset)
         accs = torch.zeros(subset)
-        subset_ts = torch.randint(1, b_inp.shape[1], subset)
+        subset_ts = torch.randint(1, b_inp.shape[1], (subset,))
         for i in range(subset):
             t = subset_ts[i]
             h, c = None, None
