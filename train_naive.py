@@ -37,13 +37,16 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
 
     start_time = time.time()
 
+    epoch_steps = 1
     total_loss = 0
     total_acc = 0
     pbar = tqdm(dataloader, desc='train' if train else 'eval')
     for batch in pbar:
         batch_loss, batch_acc = do_batch(model, batch, optimizer, loss, writer, device, train)
-        total_loss += batch_loss  / len(dataloader)
-        total_acc += batch_acc / len(dataloader)
+        
+        total_loss = (total_loss * ((epoch_steps - 1) / epoch_steps)) + batch_loss / epoch_steps
+        total_acc = (total_acc * ((epoch_steps - 1) / epoch_steps)) + batch_acc / epoch_steps
+        
         pbar.set_description(f'{"train" if train else "eval"}, Loss: {batch_loss}, acc: {batch_acc}')
         
         writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', batch_loss, global_steps)

@@ -23,8 +23,8 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
     if type(model) == LSTM_LM:
         # randomly sample some subset of target tokens
         subset = 10
-        batch_losses = torch.zeros(subset)
-        accs = torch.zeros(subset)
+        batch_losses = []
+        accs = []
         subset_ts = torch.randint(1, b_inp.shape[1], (subset,))
         for i in range(subset):
             t = subset_ts[i]
@@ -38,8 +38,8 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
                 loss.backward()
                 optimizer.step()
             print(loss.item())
-            batch_losses[i] = loss.item()
-            accs[i] = acc.item()
+            batch_losses.append(loss.item())
+            accs.append(acc.item())
 
     elif type(model) == Decoder:
         if False:
@@ -106,20 +106,23 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
     total_loss = 0
     total_acc = 0
     pbar = tqdm(dataloader, desc='train' if train else 'eval')
-    
+    epoch_steps = 1
     start_time = time.time()
     for batch in pbar:
         b_loss, b_acc = do_batch(model, batch, optimizer, loss, writer, device, train)
-        total_loss += b_loss / len(dataloader)
-        total_acc += b_acc / len(dataloader)
+        
+        total_loss = (total_loss * ((epoch_steps-1) / epoch_steps)) + b_loss / epoch_steps
+        total_acc = (total_acc * ((epoch_steps-1) / epoch_steps)) + b_acc / epoch_steps
         pbar.set_description(f'{"train" if train else "eval"}, Loss: {b_loss}, Acc: {b_acc}')
         writer.add_scalar(f'{"train" if train else "eval"}/batch_loss', b_loss, global_step)
         writer.add_scalar(f'{"train" if train else "eval"}/batch_acc', b_acc, global_step)
         writer.flush()
         global_step += 1
+        epoch_steps += 1
         # check if more than 10 minutes have passed
         if (time.time() - start_time) > 600:
             break
+
     return total_loss, total_acc, global_step
 
 
@@ -159,7 +162,7 @@ def train_model(model, train_dataloader, eval_dataloader, test_dataloader, optim
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_type', type=str, choices=['transformer', 'lstm', 's4'], default='transformer')
-    parser.add_argument('--dataset', type=str, choices=['lra', 'wikitext'], default='wikitext')
+    parser.add_argument('--dataset', type=str, choices=['lra_ar', 'wikitext'], default='wikitext')
     parser.add_argument('--pretrained_weights', type=Path, default=None)
     parser.add_argument('--weights_output_path', type=Path, default='.')
     parser.add_argument('--logdir', type=Path, default=None)
