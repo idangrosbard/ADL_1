@@ -102,7 +102,6 @@ class LRAARDataset(data.Dataset):
         self.root_path = root_path
         for cls_folder in root_path.iterdir():
             if cls_folder.is_dir():
-                self.cls_map.append(cls_folder.name)
                 for sample in cls_folder.iterdir():
                     self.samples.append(sample)
                     self.n += 1
