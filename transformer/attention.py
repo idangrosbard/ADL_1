@@ -37,7 +37,7 @@ class Attention(nn.Module):
             del triu_mask
 
         if mask is not None:
-            square_mask = mask.unsqueeze(-1)
+            square_mask = mask.unsqueeze(-1).float()
             square_mask = square_mask @ square_mask.transpose(-1, -2) # [b, l_x, l_x]
             # Add main diagonal to the mask (to support padding tokens)
             square_mask = square_mask + torch.eye(mask.shape[1], device=mask.device).unsqueeze(0)

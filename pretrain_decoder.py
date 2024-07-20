@@ -4,7 +4,7 @@ from transformer import Decoder
 import torch
 from dataset import setup_dataloaders
 import torch.utils
-
+import time
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 import argparse
@@ -106,6 +106,8 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
     total_loss = 0
     total_acc = 0
     pbar = tqdm(dataloader, desc='train' if train else 'eval')
+    
+    start_time = time.time()
     for batch in pbar:
         b_loss, b_acc = do_batch(model, batch, optimizer, loss, writer, device, train)
         total_loss += b_loss / len(dataloader)
@@ -115,6 +117,9 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
         writer.add_scalar(f'{"train" if train else "eval"}/batch_acc', b_acc, global_step)
         writer.flush()
         global_step += 1
+        # check if more than 10 minutes have passed
+        if (time.time() - start_time) > 600:
+            break
     return total_loss, total_acc, global_step
 
 
