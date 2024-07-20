@@ -61,8 +61,8 @@ def do_batch(model, batch, optimizer, loss_fn, writer: SummaryWriter, device, tr
                 batch_losses[t] = (loss.item())
         else:
             # Get the logits for all the tokens in the sequence, up to length t (exclusive)
-            T = b_inp.shape[1]
-            logits = model(b_inp[:, :T], None, mask=mask[:, 1:])
+            # T = b_inp.shape[1]
+            logits = model(b_inp[:, :-1], None, mask=mask[:, 1:])
             logits = logits.reshape(-1, logits.shape[-1])
             target = b_inp[:, 1:].reshape(-1)
             # Calc loss, based on 0:t (exclusive) tokens, predict the t token
