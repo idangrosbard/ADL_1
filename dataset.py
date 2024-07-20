@@ -142,7 +142,7 @@ def setup_lra_ar_dataloaders(batch_size: int = 2, model: str = 'decoder'):
     test_dl = data.DataLoader(test_ds, collate_fn=dc, batch_size=batch_size, shuffle=False)
     t1 = time.time()
     print(f'Dataloaders setup in {t1 - t0} seconds')
-    return train_dl, test_dl
+    return train_dl, test_dl, test_dl
 
 
 def setup_wikitext_dataloaders(batch_size: int = 2, model: str = 'decoder'):
