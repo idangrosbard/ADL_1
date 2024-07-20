@@ -1,3 +1,4 @@
+import time
 import torch
 import torch.utils
 from tqdm import tqdm
@@ -34,6 +35,8 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
     else:
         model.eval()
 
+    start_time = time.time()
+
     total_loss = 0
     total_acc = 0
     pbar = tqdm(dataloader, desc='train' if train else 'eval')
@@ -47,6 +50,9 @@ def do_epoch(model, dataloader, optimizer, loss, writer: SummaryWriter, device, 
         writer.add_scalar(f'{"train" if train else "eval"}/batch_acc', batch_acc, global_steps)
         writer.flush()
         global_steps += 1
+        # set time limit - 5 minutes
+        if (time.time() - start_time) > 300: 
+            break
 
     return total_loss, total_acc, global_steps
 
